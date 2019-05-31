@@ -1,0 +1,10 @@
+{
+  "verbose": true,
+  "ignore": [
+    ".git",
+    "node_modules/**/node_modules",
+    "*.test.js",
+    "public/",
+    "img"
+  ]
+}

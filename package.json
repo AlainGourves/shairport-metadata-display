@@ -1,0 +1,37 @@
+{
+  "name": "shairport-metadata-display",
+  "version": "0.9.0",
+  "description": "Web app to display the metadata Shairport Sync received from iTunes or the Music app on iOS.",
+  "main": "app.js",
+  "author": {
+    "name": "Alain Gourvès",
+    "url": "https://github.com/AlainGourves"
+  },
+  "homepage": "https://github.com/AlainGourves/shairport-metadata-display",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/AlainGourves/shairport-metadata-display"
+  },
+  "bugs": {
+    "url": "https://github.com/AlainGourves/shairport-metadata-display/issues"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "color": "^3.1.1",
+    "compression": "^1.7.4",
+    "cquant": "^0.1.4",
+    "daap-parser": ">=0.1.1",
+    "express": "^4.17.0",
+    "html5-boilerplate": "^7.1.0",
+    "shairport-sync-reader": "0.0.7",
+    "sharp": "^0.22.1",
+    "socket.io": "^2.2.0"
+  },
+  "devDependencies": {
+    "jshint": "^2.10.2"
+  },
+  "scripts": {
+    "start": "nodemon apps.js",
+    "test": "node --inspect app.js"
+  }
+}
