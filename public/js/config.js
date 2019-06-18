@@ -18,5 +18,6 @@ let myConfig = {
     modalMsgInfos: "La connexion est établie avec le serveur, en attente d'informations...<br>(Attendre le morceau suivant ou faire \"Pause\" puis \"Play\")",
     modalMsgServerTitle: "Alerte",
     modalMsgServer: "Pas de connexion avec le serveur.<br>Peut-être est-il dans les choux ?"
-  }
+  },
+  defaultPageTitle: "Shairport-sync Metadata Display"
 }

@@ -1,14 +1,11 @@
 .DS_Store
 .vscode/*
-img
 .jshintrc
-.nodemon.json
+nodemon.json
 package-lock.json
 public/doc/*
 
-test_colorDiff.js
-test-cquant.js
-
+tmp_*.png
 # Dependency directories
 node_modules
 

@@ -69,7 +69,7 @@ socket.on('noPICT', () => {
 })
 
 socket.on('bgImg', function (data) {
-  document.documentElement.style.setProperty('--bg-blur', 'url(' + data.src + ')')
+  document.documentElement.style.setProperty('--bg-blur', `url(${data.src})`)
 })
 
 socket.on('trackInfos', (data) => {

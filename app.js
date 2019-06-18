@@ -82,15 +82,14 @@ let pipeReader = new ShairportReader({
 })
 pipeReader
     .on('meta', function (meta) {
-        console.log('ev: meta') //, meta)
+        // console.log('ev: meta') //, meta)
         if (currentAlbum !== undefined) {
             if (currentAlbum !== prevAlbum) bgImg = undefined
             prevAlbum = currentAlbum
         }
         currentAlbum = meta.asai // `asai` : album ID (DAAP code)
-        console.log('albumID:', currentAlbum)
+        // console.log('albumID:', currentAlbum)
         track = new Track()
-        console.log('yearAlbum:', track.yearAlbum)
         track.artist = meta.asar
         track.title = meta.minm
         track.album = meta.asal
@@ -101,13 +100,13 @@ pipeReader
         updateTrack('trackInfos')
     })
     .on('pvol', function (pvol) {
-        console.log('ev: pvol')
+        // console.log('ev: pvol')
         // volume entre 0 (muet) et 100 (à fond)
         track.volume = map(pvol.volume, pvol.lowest, pvol.highest, 0, 100)
         updateTrack('volume')
     })
     .on('prgr', function (prgr) {
-        console.log('ev: prgr') //, prgr)
+        // console.log('ev: prgr') //, prgr)
         if (track.duration === 0) {
             track.duration = totalLength(prgr)
         }
@@ -119,18 +118,18 @@ pipeReader
     //     console.log('ev: client', data)
     // })
     .on('pfls', function (pfls) {
-        console.log('ev: pfls')
+        // console.log('ev: pfls')
         // Pause/Stop : envoie un  message pour vider l'affichage
         io.emit('pause')
     })
     .on('pend', function () {
-        console.log('ev: pend')
+        // console.log('ev: pend')
         // fin du stream
         track = new Track()
         io.emit('stop')
     })
     .on('PICT', function (PICT) {
-        console.log('ev: PICT')
+        // console.log('ev: PICT')
         buf = Buffer.from(PICT, 'base64')
         track.artwork.isPresent = true
 
@@ -212,9 +211,7 @@ async function processPICT(image) {
         let luminances = []
         let ratios = []
         const imgBuf = await image.raw().toBuffer({ resolveWithObject: true })
-        console.log('Début cquant')
         let responseCQuant = await cquant.paletteAsync(imgBuf.data, imgBuf.info.channels, colorCount)
-        console.log('Fin cquant')
         responseCQuant.forEach(element => {
             colors.push(Color({
                 r: element.R,
@@ -277,7 +274,6 @@ async function processPICT(image) {
         if (track.yearAlbum !== '') {
             // contrast ratio white/bg color
             let cr = calcContrastRatio(1, luminances[0])
-            console.log('cr:', cr)
             if (cr < 3) {
                 track.artwork.palette.spanColorContrast = true
             }
@@ -288,7 +284,7 @@ async function processPICT(image) {
         if (currentAlbum !== prevAlbum || bgImg === undefined) {
             // supprime les fichiers temporaires
             glob('tmp_*', (err, files) => {
-                if (err) console.log('glob:', err)
+                if (err) console.log('glob error:', err)
                 files.forEach((f) => {
                     fs.unlink(f, (err) => {
                         if (err) throw err

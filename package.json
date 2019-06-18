@@ -31,7 +31,7 @@
     "jshint": "^2.10.2"
   },
   "scripts": {
-    "start": "nodemon apps.js",
+    "start": "node app.js",
     "test": "node --inspect app.js"
   }
 }
