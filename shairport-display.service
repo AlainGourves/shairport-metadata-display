@@ -1,0 +1,12 @@
+[Unit]
+Description=Shairport Display Service
+After=network.target
+
+[Service]
+WorkingDirectory=/home/pi/Documents/shairport-metadata-display
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+User=pi
+
+[Install]
+WantedBy=multi-user.target

@@ -5,9 +5,10 @@ const sharp = require('sharp')
 const Color = require('color')
 const glob = require('glob')
 const express = require('express')
+require('dotenv').config()
 
 const app = express()
-const port = 3600
+const port = process.env.PORT
 app.use(compression())
 app.use(express.static('public'))
 app.disable('x-powered-by') // masquer express dans les headers
@@ -28,7 +29,7 @@ let buf
 let bgImg
 
 http.listen(port, () => {
-    console.log('listening on :' + port)
+    console.log('listening on:', port)
 })
 
 // Routes ----------------------
@@ -78,7 +79,7 @@ io.on('connection', function (socket) {
 
 // read from pipe
 let pipeReader = new ShairportReader({
-    path: '/tmp/shairport-sync-metadata'
+    path: process.env.FIFO
 })
 pipeReader
     .on('meta', function (meta) {
@@ -150,13 +151,13 @@ function updateTrack(what, socket) {
             }
             break
         case 'PICT':
-            src = 'data:image/' + track.artwork.format + ';base64,' + buf.toString('base64')
+            src = `data:image/${track.artwork.format};base64,${buf.toString('base64')}`
             data = {
                 'src': src
             }
             break
         case 'bgImg':
-            src = 'data:image/jpeg;base64,' + bgImg.toString('base64')
+            src = `data:image/jpeg;base64,${bgImg.toString('base64')}`
             data = {
                 'src': src
             }
@@ -291,7 +292,7 @@ async function processPICT(image) {
                     })
                 })
             })
-            const f = 'tmp_' + myHash() + '.png'
+            const f = `tmp_${myHash()}.png`
             const thumbnail = await image.resize({
                     width: 100
                 })
@@ -303,6 +304,10 @@ async function processPICT(image) {
                     kernel: sharp.kernel.cubic
                 })
                 .blur(32)
+                .modulate({
+                    brightness: 1.1,
+                    saturation: 1.25
+                })
                 .jpeg({
                     quality: 80
                 })
