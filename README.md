@@ -98,7 +98,7 @@ There's an `.env` file with :
 ### Client's side
 
 - `public/js/config.js`: here you can edit :
-        - Server's port number,
-        - Texts of the modal dialogs,
-        - Default values : page title, image and colors used when idle or no available cover art.
+  - Server's port number,
+  - Texts of the modal dialogs,
+  - Default values : page title, image and colors used when idle or no available cover art.
 - `public/css/main.css`: it's mainly there that the "magic" happens, sky is the limit for customization !
