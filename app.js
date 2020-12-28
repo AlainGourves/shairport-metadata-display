@@ -15,7 +15,8 @@ app.disable('x-powered-by') // masquer express dans les headers
 
 const http = require('http').Server(app)
 const io = require('socket.io')(http, {
-    pingTimeout: 60000
+    pingTimeout: 60000,
+    cookie: false
 })
 // pingTimeout pour corriger un bug de Chrome : https://github.com/socketio/socket.io/issues/3259
 

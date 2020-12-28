@@ -56,7 +56,7 @@ class Track {
       this.album.el.innerHTML += ` <span>${this.yearAlbum}</span>`
     }
     if (this.title.title !== '') {
-      document.querySelector('html').classList.add('playing')
+      document.body.classList.add('playing')
       document.title = `${this.artist.artist}, "${this.title.title}"`
     } else {
       document.title = myConfig.defaultPageTitle
@@ -93,7 +93,7 @@ class Track {
     this.timerPause()
     this.player.style.height = 0
     this.player.style.display = 'none'
-    document.documentElement.classList.remove('playing')
+    document.body.classList.remove('playing')
     document.documentElement.style.setProperty('--bg-blur','')
     this.timeLine.querySelector('#elapsed').style.width = 0
     this.removeCaret()

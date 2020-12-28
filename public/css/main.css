@@ -103,9 +103,9 @@ textarea {
    ========================================================================== */
 
 :root {
-  --bg-artwork: rgb(153, 153, 153);
-  --title-col: rgb(34, 34, 34);
-  --artist-col: rgb(255, 255, 255);
+  --bg-artwork: hsla(0, 0%, 60%, 1);
+  --title-col: hsla(0, 0%, 13%, 1);
+  --artist-col: hsla(0, 0%, 100%, 1);
   --text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.75);
   --modal-info: hsla(211, 90%, 60%, 1);
   --modal-alert: hsla(12, 100%, 50%, 1);
@@ -115,19 +115,24 @@ textarea {
   --bleu: hsla(210, 80%, 50%, 1);
 }
 
-html {
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
   font-family: 'Lato', 'Roboto', Helvetica, Arial, sans-serif;
   font-size: 18px;
-  height: 100%;
+  text-rendering: optimizeLegibility;
   background-color:#cacaca;
   background-image: url();
-  transition: background-color .5s ease-out;
+  transition: background-color .25s ease;
 }
 
-html.playing{
+body.playing{
   background-color: var(--bg-artwork);
   background-image: var(--bg-blur);
   background-size: cover;
+  background-position-y: center;
 }
 
 /* Extra small devices */
@@ -184,22 +189,14 @@ html.playing{
   }
 }
 
-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  text-rendering: optimizeLegibility;
-}
-
 main {
   display: flex;
   width: 75vw;
   min-width: 200px;
   line-height: 1.2;
   box-shadow: 2px 2px .5rem rgba(0, 0, 0, 0.5);
-  background-color: rgb(153, 153, 153);
-  transition: background-color .5s ease-out, filter .5S linear;
+  background-color: hsl(0, 0%, 60%);
+  transition: background-color .25s ease, filter .5S linear;
   filter: none;
   border-radius: var(--radius);
 }
@@ -479,185 +476,4 @@ div#timeLine div#elapsed {
 .modal-body {
   position: relative;
   padding: 1rem;
-}
-
-/* ==========================================================================
-   Helper classes
-   ========================================================================== */
-
-/*
- * Hide visually and from screen readers
- */
-
-.hidden {
-  display: none !important;
-}
-
-/*
-* Hide only visually, but have it available for screen readers:
-* https://snook.ca/archives/html_and_css/hiding-content-for-accessibility
-*
-* 1. For long content, line feeds are not interpreted as spaces and small width
-*    causes content to wrap 1 word per line:
-*    https://medium.com/@jessebeach/beware-smushed-off-screen-accessible-text-5952a4c2cbfe
-*/
-
-.visuallyhidden {
-  border: 0;
-  clip: rect(0 0 0 0);
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  padding: 0;
-  position: absolute;
-  width: 1px;
-  white-space: nowrap;
-  /* 1 */
-}
-
-/*
-* Extends the .visuallyhidden class to allow the element
-* to be focusable when navigated to via the keyboard:
-* https://www.drupal.org/node/897638
-*/
-
-.visuallyhidden.focusable:active,
-.visuallyhidden.focusable:focus {
-  clip: auto;
-  height: auto;
-  margin: 0;
-  overflow: visible;
-  position: static;
-  width: auto;
-  white-space: inherit;
-}
-
-/*
-* Hide visually and from screen readers, but maintain layout
-*/
-
-.invisible {
-  visibility: hidden;
-}
-
-/*
-* Clearfix: contain floats
-*
-* For modern browsers
-* 1. The space content is one way to avoid an Opera bug when the
-*    `contenteditable` attribute is included anywhere else in the document.
-*    Otherwise it causes space to appear at the top and bottom of elements
-*    that receive the `clearfix` class.
-* 2. The use of `table` rather than `block` is only necessary if using
-*    `:before` to contain the top-margins of child elements.
-*/
-
-.clearfix:before,
-.clearfix:after {
-  content: " ";
-  /* 1 */
-  display: table;
-  /* 2 */
-}
-
-.clearfix:after {
-  clear: both;
-}
-
-
-/* ==========================================================================
-   EXAMPLE Media Queries for Responsive Design.
-   These examples override the primary ('mobile first') styles.
-   Modify as content requires.
-   ========================================================================== */
-
-@media only screen and (min-width: 35em) {
-  /* Style adjustments for viewports that meet the condition */
-}
-
-@media print,
-(-webkit-min-device-pixel-ratio: 1.25),
-(min-resolution: 1.25dppx),
-(min-resolution: 120dpi) {
-  /* Style adjustments for high resolution devices */
-}
-
-
-/* ==========================================================================
-   Print styles.
-   Inlined to avoid the additional HTTP request:
-   https://www.phpied.com/delay-loading-your-print-css/
-   ========================================================================== */
-
-@media print {
-
-  *,
-  *:before,
-  *:after {
-    background: transparent !important;
-    color: #000 !important;
-    /* Black prints faster */
-    -webkit-box-shadow: none !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
-
-  a,
-  a:visited {
-    text-decoration: underline;
-  }
-
-  a[href]:after {
-    content: " ("attr(href) ")";
-  }
-
-  abbr[title]:after {
-    content: " ("attr(title) ")";
-  }
-
-  /*
-     * Don't show links that are fragment identifiers,
-     * or use the `javascript:` pseudo protocol
-     */
-
-  a[href^="#"]:after,
-  a[href^="javascript:"]:after {
-    content: "";
-  }
-
-  pre {
-    white-space: pre-wrap !important;
-  }
-
-  pre,
-  blockquote {
-    border: 1px solid #999;
-    page-break-inside: avoid;
-  }
-
-  /*
-     * Printing Tables:
-     * http://css-discuss.incutio.com/wiki/Printing_Tables
-     */
-
-  thead {
-    display: table-header-group;
-  }
-
-  tr,
-  img {
-    page-break-inside: avoid;
-  }
-
-  p,
-  h2,
-  h3 {
-    orphans: 3;
-    widows: 3;
-  }
-
-  h2,
-  h3 {
-    page-break-after: avoid;
-  }
 }
