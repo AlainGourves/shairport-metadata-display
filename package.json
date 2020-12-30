@@ -25,7 +25,6 @@
     "express": "^4.17.0",
     "shairport-sync-reader": "0.0.9",
     "sharp": "^0.25.2",
-    "socket.io": "^2.3.0",
     "ws": "^7.4.1"
   },
   "devDependencies": {
