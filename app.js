@@ -5,6 +5,7 @@ const sharp = require('sharp')
 const Color = require('color')
 const glob = require('glob')
 const express = require('express')
+const WebSocket = require('ws')
 require('dotenv').config()
 
 const app = express()
@@ -13,12 +14,10 @@ app.use(compression())
 app.use(express.static('public'))
 app.disable('x-powered-by') // masquer express dans les headers
 
-const http = require('http').Server(app)
-const io = require('socket.io')(http, {
-    pingTimeout: 60000,
-    cookie: false
-})
-// pingTimeout pour corriger un bug de Chrome : https://github.com/socketio/socket.io/issues/3259
+const http = require('http')
+const server = http.createServer(app)
+// Initialize WebSocket server instance
+const wss = new WebSocket.Server({ server });
 
 const fs = require('fs')
 
@@ -29,8 +28,8 @@ let prevAlbum
 let buf
 let bgImg
 
-http.listen(port, () => {
-    console.log('listening on:', port)
+server.listen(port, () => {
+    console.log(`listening on port: ${server.address().port}`);
 })
 
 // Routes ----------------------
@@ -48,33 +47,44 @@ app.use(function(err, req, res, next) {
     return res.status(500).send({ error: err })
 })
 
-// SocketIO
-io.on('connection', function (socket) {
-    console.log('an user connected')
-    socket.emit('message', 'Bienvenue, nouveau connecté')
+function noop() {}
+
+function heartbeat() {
+  this.isAlive = true;
+}
+
+wss.on('connection', function(ws){
+    console.log((new Date()), 'Client connected...');
+    ws.send('{"message": "Welcome, new client!"}');
+
     if (track.title !== '') {
         // pour n'envoyer les infos qu'au nouveau connecté
-        updateTrack('trackInfos', socket)
+        updateTrack('trackInfos', ws)
         if (track.artwork.isPresent) {
-            updateTrack('PICT', socket)
-            updateTrack('PICTmeta', socket)
-            updateTrack('bgImg', socket)
+            updateTrack('PICT', ws)
+            updateTrack('PICTmeta', ws)
+            updateTrack('bgImg', ws)
         }
     } else {
-        socket.emit('message', 'noInfo')
+        ws.send(JSON.stringify({'noInfo':{}}))
     }
 
-    socket.on('requestPICT', () => {
-        if (track.artwork.isPresent) {
-            updateTrack('PICT', socket)
-            updateTrack('PICTmeta', socket)
-        } else {
-            socket.emit('noPICT')
+    ws.on('message', function(msg){
+        console.log('received: %s', msg);
+        if(msg === 'requestPICT'){
+            if (track.artwork.isPresent) {
+                updateTrack('PICT', ws)
+                updateTrack('PICTmeta', ws)
+            } else {
+                ws.send(JSON.stringify({'noPICT':{}}))
+            }
+        }else{
+            ws.send(`You sent: ${msg}`)
         }
     })
 
-    socket.on('disconnect', () => {
-        console.log('user disconnected')
+    ws.on('close', function(){
+        console.log((new Date()), 'Client gone.');
     })
 })
 
@@ -115,20 +125,20 @@ pipeReader
         track.currPosition = elapsed(prgr)
         updateTrack('position')
     })
-    // .on('client', function (data) {
-    //     // infos sur le client qui envoie les infos (iTunes, iPod, etc.)
-    //     console.log('ev: client', data)
-    // })
     .on('pfls', function (pfls) {
         // console.log('ev: pfls')
         // Pause/Stop : envoie un  message pour vider l'affichage
-        io.emit('pause')
+        wss.clients.forEach(function each(client) {
+            client.send('{"pause":{}}');
+        });
     })
     .on('pend', function () {
         // console.log('ev: pend')
         // fin du stream
         track = new Track()
-        io.emit('stop')
+        wss.clients.forEach(function each(client) {
+            client.send('{"stop":{}}');
+        });
     })
     .on('PICT', function (PICT) {
         // console.log('ev: PICT')
@@ -193,10 +203,18 @@ function updateTrack(what, socket) {
             data = track
             break
     }
+    // Formater le message en objet JSON :
+    // {'type': what, 'msg': data}
+    let msg = {}
+    msg[what] = data;
     if (socket) {
-        socket.emit(what, data)
+        // envoie à un seul client
+        socket.send(JSON.stringify(msg));
     } else {
-        io.emit(what, data)
+        // Broadcast
+        wss.clients.forEach(function each(client) {
+            client.send(JSON.stringify(msg));
+        });
     }
 }
 

@@ -23,12 +23,13 @@
     "daap-parser": "^0.1.1",
     "dotenv": "^8.2.0",
     "express": "^4.17.0",
-    "html5-boilerplate": "^7.3.0",
     "shairport-sync-reader": "0.0.9",
     "sharp": "^0.25.2",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.3.0",
+    "ws": "^7.4.1"
   },
   "devDependencies": {
+    "html5-boilerplate": "^7.3.0",
     "jshint": "^2.11.0"
   },
   "scripts": {
