@@ -57,53 +57,42 @@ socket.onmessage = function (msg) {
     case 'welcome':
       console.log("Welcome new client.");
       break;
-
     case 'noInfo':
       track = new Track();
       track.raz();
       displayModal('noInfo');
       break;
-
     case 'PICTmeta':
       PICTmeta(msg.data);
       break;
-
     case 'PICT':
       PICT(msg.data);
       break;
-
     case 'noPICT':
       noPICT();
       break;
-
     case 'bgImg':
       bgImg(msg.data);
       break;
-
     case 'trackInfos':
       trackInfos(msg.data);
       break;
-
     case 'position':
       position(msg.data);
       break;
-
     case 'volume':
       track.volume = msg.data.volume;
       break;
-
     case 'pause':
       track.timerPause();
       break;
-
     case 'stop':
       track = null;
       track = new Track();
       track.raz();
       break;
-
     default:
-      console.log("Manque un case => ", msg.type);
+      console.log("You're missing something => ", msg.type);
       break;
   }
 };

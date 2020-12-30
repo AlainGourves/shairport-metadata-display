@@ -54,7 +54,7 @@ function heartbeat() {
 }
 
 wss.on('connection', function(ws){
-    console.log((new Date()), 'Client connected...');
+    console.log(new Date().toLocaleString(), ' >>> Client connected...');
     ws.send('{"type": "welcome"}')
 
     if (track.title !== '') {
@@ -70,7 +70,7 @@ wss.on('connection', function(ws){
     }
 
     ws.on('message', function(msg){
-        console.log('received: %s', msg);
+        console.log('Received: ', msg);
         if(msg === 'requestPICT'){
             if (track.artwork.isPresent) {
                 updateTrack('PICT', ws)
@@ -82,7 +82,7 @@ wss.on('connection', function(ws){
     })
 
     ws.on('close', function(){
-        console.log((new Date()), 'Client gone.');
+        console.log(new Date().toLocaleString(), ' >>> Client gone.');
     })
 })
 
