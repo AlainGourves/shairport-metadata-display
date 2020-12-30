@@ -3,7 +3,6 @@ let timers = [];
 let isModal = false;
 
 let mainEl, modalEl, modalBtn;
-let socket = new WebSocket('ws://' + window.location.host);
 
 window.addEventListener('load', (event) => {
   mainEl = document.querySelector('main');
@@ -12,12 +11,13 @@ window.addEventListener('load', (event) => {
   modalBtn.onclick = () => {
     closeModal();
   };
-
-
+  
   // Create an observer instance linked to the callback function
   let observer = new MutationObserver(observerCallback);
   // Start observing the target node for configured mutations
   observer.observe(observerTarget, observerConfig);
+
+  newWebSocket();
 });
 
 document.addEventListener('keyup', (event) => {
@@ -26,27 +26,51 @@ document.addEventListener('keyup', (event) => {
   }
 }, false);
 
-socket.onopen = function (event) {
+function newWebSocket(){
+  let socket = new WebSocket('ws://' + window.location.host);
+
+  socket.onopen = function (event) {
+    onOpen(event);
+  }
+  socket.onclose = function (event) {
+    onClose(event);
+  }
+  socket.onerror = function (err) {
+    onError(err);
+  }
+  socket.onmessage = function (msg) {
+    onMessage(msg)
+  }
+}
+
+
+function onOpen(event) {
   console.log('Opening connection...');
 };
 
-socket.onclose = function (event) {
+function onClose(event) {
   if (event.wasClean) {
     console.log(`Connection closed cleanly, code=${event.code} reason=${event.reason}`);
   } else {
     // e.g. server process killed or network down
     console.log(`Connection died, code=${event.code}`);
+    if (!navigator.onLine){
+      console.log("You're offline !")
+    }else{
+      let timeout = 250; // tentatives de reconnexion de plus en plus espacées
+      setTimeout (newWebSocket, Math.min(10000,timeout+=timeout));
+    }
   }
 };
 
-socket.onerror = function (err) {
+function onError(err) {
   console.error('WebSocket error: ', err.message);
   if (!isModal) {
     displayModal('connect_error');
   }
 };
 
-socket.onmessage = function (msg) {
+function onMessage(msg) {
   msg = JSON.parse(msg.data);
   if (isModal) {
     closeModal();
