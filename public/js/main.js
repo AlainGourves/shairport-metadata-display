@@ -1,4 +1,4 @@
-let socket = io()
+const socket = new WebSocket('ws://192.168.0.14:3600');
 let track = new Track()
 let timers = []
 let isModal = false
@@ -25,22 +25,83 @@ document.addEventListener('keyup', (event) => {
   }
 }, false);
 
-socket.on('connexion', function (msg) {
-  console.log('connexion', msg)
-})
+socket.onopen = function (event) {
+  console.log('Opening connection...');
+}
 
-socket.on('message', function (msg) {
-  console.log('message:', msg)
+socket.onclose = function (event) {
+  if (event.wasClean) {
+    console.log(`Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+  } else {
+    // e.g. server process killed or network down
+    console.log(`Connection died, code=${event.code}`);
+  }
+}
+
+socket.onerror = function (err) {
+  console.error('WebSocket error: ', err.message);
+  if (!isModal) {
+    displayModal('connect_error')
+  }
+}
+
+socket.onmessage = function (msg) {
+  msg = JSON.parse(msg.data);
+  console.log(msg)
   if (isModal) closeModal()
   if (modalEl.classList.contains('modal-warning')) modalEl.classList.remove('modal-warning')
-  if (msg === 'noInfo') {
-    track = new Track()
-    track.raz()
-    displayModal(msg)
-  }
-})
+  switch (msg.type) {
+    case 'noInfo':
+      track = new Track()
+      track.raz()
+      displayModal('noInfo')
+      break;
 
-socket.on('PICTmeta', function (data) {
+    case 'PICTmeta':
+      PICTmeta(msg.data)
+      break
+
+    case 'PICT':
+      PICT(msg.data)
+      break
+
+    case 'noPICT':
+      noPICT()
+      break
+
+    case 'bgImg':
+      bgImg(msg.data)
+      break
+
+    case 'trackInfos':
+      trackInfos(msg.data)
+      break
+
+    case 'position':
+      position(msg.data)
+      break
+
+    case 'volume':
+      volume(msg.data)
+      break
+
+    case 'pause':
+      track.timerPause()
+      break
+
+    case 'stop':
+      track = null
+      track = new Track()
+      track.raz()
+      break
+
+    default:
+      console.log("Manque un case => ", msg.type)
+      break;
+  }
+}
+
+const PICTmeta = function (data) {
   if (isModal) closeModal()
   track.artwork.dimensions.width = data.dimensions.width
   track.artwork.dimensions.height = data.dimensions.height
@@ -53,32 +114,32 @@ socket.on('PICTmeta', function (data) {
     }
     track.updateColors()
   }
-})
+}
 
-socket.on('PICT', function (data) {
+const PICT = function (data) {
   track.artwork.isPresent = true
   track.artwork.src = data.src
   track.updatePICT()
   track.updateColors()
-})
+}
 
-socket.on('noPICT', () => {
+const noPICT = function () {
   track.artwork.src = myConfig.defaultArtwork.src
   track.updatePICT()
   track.updateColors()
-})
+}
 
-socket.on('bgImg', function (data) {
+const bgImg = function (data) {
   document.documentElement.style.setProperty('--bg-blur', `url(${data.src})`)
-})
+}
 
-socket.on('trackInfos', (data) => {
+const trackInfos = function (data) {
   if (isModal) closeModal()
   if (track !== undefined) {
     track.timerPause()
     track.removeCaret()
   }
-  document.documentElement.style.setProperty('--bg-blur','')
+  document.documentElement.style.setProperty('--bg-blur', '')
   track = new Track()
   track.title.title = data.title
   track.artist.artist = data.artist
@@ -86,33 +147,17 @@ socket.on('trackInfos', (data) => {
   track.yearAlbum = data.yearAlbum
   track.durationMs = data.duration
   track.updateTrackInfos()
-})
+}
 
-socket.on('position', (data) => {
+const position = function (data) {
   track.currPosition = data.currPosition
   track.durationMs = data.duration
   track.timerStart()
-})
+}
 
-socket.on('volume', (data) => {
+const volume = function (data) {
   track.volume = data.volume
-})
-
-socket.on('pause', () => {
-  track.timerPause()
-})
-
-socket.on('stop', () => {
-  track = null
-  track = new Track()
-  track.raz()
-})
-
-socket.on('connect_error', function (err) {
-  if (!isModal) {
-    displayModal('connect_error')
-  }
-})
+}
 
 // Select the node that will be observed for mutations
 let observerTarget = track.title.el

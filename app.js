@@ -55,7 +55,7 @@ function heartbeat() {
 
 wss.on('connection', function(ws){
     console.log((new Date()), 'Client connected...');
-    ws.send('{"message": "Welcome, new client!"}');
+    ws.send('{"type": "welcome"}')
 
     if (track.title !== '') {
         // pour n'envoyer les infos qu'au nouveau connecté
@@ -66,7 +66,7 @@ wss.on('connection', function(ws){
             updateTrack('bgImg', ws)
         }
     } else {
-        ws.send(JSON.stringify({'noInfo':{}}))
+        ws.send('{"type": "noInfo"}')
     }
 
     ws.on('message', function(msg){
@@ -76,10 +76,8 @@ wss.on('connection', function(ws){
                 updateTrack('PICT', ws)
                 updateTrack('PICTmeta', ws)
             } else {
-                ws.send(JSON.stringify({'noPICT':{}}))
+                ws.send('{"type": "noPICT"}')
             }
-        }else{
-            ws.send(`You sent: ${msg}`)
         }
     })
 
@@ -129,7 +127,7 @@ pipeReader
         // console.log('ev: pfls')
         // Pause/Stop : envoie un  message pour vider l'affichage
         wss.clients.forEach(function each(client) {
-            client.send('{"pause":{}}');
+            client.send('{"type": "pause"}');
         });
     })
     .on('pend', function () {
@@ -137,7 +135,7 @@ pipeReader
         // fin du stream
         track = new Track()
         wss.clients.forEach(function each(client) {
-            client.send('{"stop":{}}');
+            client.send('{"type": "stop"}');
         });
     })
     .on('PICT', function (PICT) {
@@ -205,8 +203,8 @@ function updateTrack(what, socket) {
     }
     // Formater le message en objet JSON :
     // {'type': what, 'msg': data}
-    let msg = {}
-    msg[what] = data;
+    let msg = {'type': what,
+                'data': data}
     if (socket) {
         // envoie à un seul client
         socket.send(JSON.stringify(msg));
