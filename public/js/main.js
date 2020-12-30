@@ -1,33 +1,34 @@
-const socket = new WebSocket('ws://192.168.0.14:3600');
-let track = new Track()
-let timers = []
-let isModal = false
+let track = new Track();
+let timers = [];
+let isModal = false;
 
-let mainEl, modalEl, modalBtn
+let mainEl, modalEl, modalBtn;
+let socket = new WebSocket('ws://' + window.location.host);
 
-window.addEventListener("DOMContentLoaded", (event) => {
-  mainEl = document.querySelector('main')
-  modalEl = document.querySelector('#modalCenter')
-  modalBtn = modalEl.querySelector('.modal-header button')
+window.addEventListener('load', (event) => {
+  mainEl = document.querySelector('main');
+  modalEl = document.querySelector('#modalCenter');
+  modalBtn = modalEl.querySelector('.modal-header button');
   modalBtn.onclick = () => {
-    closeModal()
-  }
+    closeModal();
+  };
+
 
   // Create an observer instance linked to the callback function
-  let observer = new MutationObserver(observerCallback)
+  let observer = new MutationObserver(observerCallback);
   // Start observing the target node for configured mutations
-  observer.observe(observerTarget, observerConfig)
-})
+  observer.observe(observerTarget, observerConfig);
+});
 
 document.addEventListener('keyup', (event) => {
   if (event.key === 'Escape' && isModal) {
-    closeModal()
+    closeModal();
   }
 }, false);
 
 socket.onopen = function (event) {
   console.log('Opening connection...');
-}
+};
 
 socket.onclose = function (event) {
   if (event.wasClean) {
@@ -36,136 +37,138 @@ socket.onclose = function (event) {
     // e.g. server process killed or network down
     console.log(`Connection died, code=${event.code}`);
   }
-}
+};
 
 socket.onerror = function (err) {
   console.error('WebSocket error: ', err.message);
   if (!isModal) {
-    displayModal('connect_error')
+    displayModal('connect_error');
   }
-}
+};
 
 socket.onmessage = function (msg) {
   msg = JSON.parse(msg.data);
-  console.log(msg)
-  if (isModal) closeModal()
-  if (modalEl.classList.contains('modal-warning')) modalEl.classList.remove('modal-warning')
+  if (isModal) {
+    closeModal();
+    if (modalEl.classList.contains('modal-warning')) modalEl.classList.remove('modal-warning');
+  }
+  console.log(msg);
   switch (msg.type) {
+    case 'welcome':
+      console.log("Welcome new client.");
+      break;
+
     case 'noInfo':
-      track = new Track()
-      track.raz()
-      displayModal('noInfo')
+      track = new Track();
+      track.raz();
+      displayModal('noInfo');
       break;
 
     case 'PICTmeta':
-      PICTmeta(msg.data)
-      break
+      PICTmeta(msg.data);
+      break;
 
     case 'PICT':
-      PICT(msg.data)
-      break
+      PICT(msg.data);
+      break;
 
     case 'noPICT':
-      noPICT()
-      break
+      noPICT();
+      break;
 
     case 'bgImg':
-      bgImg(msg.data)
-      break
+      bgImg(msg.data);
+      break;
 
     case 'trackInfos':
-      trackInfos(msg.data)
-      break
+      trackInfos(msg.data);
+      break;
 
     case 'position':
-      position(msg.data)
-      break
+      position(msg.data);
+      break;
 
     case 'volume':
-      volume(msg.data)
-      break
+      track.volume = msg.data.volume;
+      break;
 
     case 'pause':
-      track.timerPause()
-      break
+      track.timerPause();
+      break;
 
     case 'stop':
-      track = null
-      track = new Track()
-      track.raz()
-      break
+      track = null;
+      track = new Track();
+      track.raz();
+      break;
 
     default:
-      console.log("Manque un case => ", msg.type)
+      console.log("Manque un case => ", msg.type);
       break;
   }
-}
+};
 
 const PICTmeta = function (data) {
-  if (isModal) closeModal()
-  track.artwork.dimensions.width = data.dimensions.width
-  track.artwork.dimensions.height = data.dimensions.height
+  if (isModal) closeModal();
+  track.artwork.dimensions.width = data.dimensions.width;
+  track.artwork.dimensions.height = data.dimensions.height;
   if (data.palette.backgroundColor !== 'undefined') {
-    track.artwork.palette.backgroundColor = data.palette.backgroundColor
-    track.artwork.palette.color = data.palette.color
-    track.artwork.palette.alternativeColor = data.palette.alternativeColor
+    track.artwork.palette.backgroundColor = data.palette.backgroundColor;
+    track.artwork.palette.color = data.palette.color;
+    track.artwork.palette.alternativeColor = data.palette.alternativeColor;
     if (data.palette.spanColorContrast) {
-      track.artwork.palette.spanColorContrast = true
+      track.artwork.palette.spanColorContrast = true;
     }
-    track.updateColors()
+    track.updateColors();
   }
-}
+};
 
 const PICT = function (data) {
-  track.artwork.isPresent = true
-  track.artwork.src = data.src
-  track.updatePICT()
-  track.updateColors()
-}
+  track.artwork.isPresent = true;
+  track.artwork.src = data.src;
+  track.updatePICT();
+  track.updateColors();
+};
 
 const noPICT = function () {
-  track.artwork.src = myConfig.defaultArtwork.src
-  track.updatePICT()
-  track.updateColors()
-}
+  track.artwork.src = myConfig.defaultArtwork.src;
+  track.updatePICT();
+  track.updateColors();
+};
 
 const bgImg = function (data) {
-  document.documentElement.style.setProperty('--bg-blur', `url(${data.src})`)
-}
+  document.documentElement.style.setProperty('--bg-blur', `url(${data.src})`);
+};
 
 const trackInfos = function (data) {
-  if (isModal) closeModal()
+  if (isModal) closeModal();
   if (track !== undefined) {
-    track.timerPause()
-    track.removeCaret()
+    track.timerPause();
+    track.removeCaret();
   }
-  document.documentElement.style.setProperty('--bg-blur', '')
-  track = new Track()
-  track.title.title = data.title
-  track.artist.artist = data.artist
-  track.album.album = data.album
-  track.yearAlbum = data.yearAlbum
-  track.durationMs = data.duration
-  track.updateTrackInfos()
-}
+  document.documentElement.style.setProperty('--bg-blur', '');
+  track = new Track();
+  track.title.title = data.title;
+  track.artist.artist = data.artist;
+  track.album.album = data.album;
+  track.yearAlbum = data.yearAlbum;
+  track.durationMs = data.duration;
+  track.updateTrackInfos();
+};
 
 const position = function (data) {
-  track.currPosition = data.currPosition
-  track.durationMs = data.duration
-  track.timerStart()
-}
-
-const volume = function (data) {
-  track.volume = data.volume
-}
+  track.currPosition = data.currPosition;
+  track.durationMs = data.duration;
+  track.timerStart();
+};
 
 // Select the node that will be observed for mutations
-let observerTarget = track.title.el
+let observerTarget = track.title.el;
 
 // Options for the observer (which mutations to observe)
 let observerConfig = {
   childList: true
-}
+};
 
 // Callback function to execute when mutations are observed
 let observerCallback = function (mutationsList, observer) {
@@ -174,35 +177,35 @@ let observerCallback = function (mutationsList, observer) {
       // demande au serveur d'envoyer la pochette si elle existe
       let timeOutID = window.setTimeout(() => {
         if (track.title.title !== '' && !track.artwork.isPresent) {
-          socket.emit('requestPICT')
+          socket.send('requestPICT');
         }
-      }, 5000)
-      window.clearTimeout(timeOutID)
+      }, 5000);
+      window.clearTimeout(timeOutID);
     }
   }
 };
 
 function displayModal(msg) {
-  let m = modalEl.querySelector('.modal-body')
-  let h = modalEl.querySelector('.modal-header h5')
+  let m = modalEl.querySelector('.modal-body');
+  let h = modalEl.querySelector('.modal-header h5');
   if (msg === 'noInfo') {
-    h.innerHTML = myConfig.strings.modalMsgInfosTitle
-    m.innerHTML = myConfig.strings.modalMsgInfos
+    h.innerHTML = myConfig.strings.modalMsgInfosTitle;
+    m.innerHTML = myConfig.strings.modalMsgInfos;
   } else if (msg === 'connect_error') {
-    h.innerHTML = myConfig.strings.modalMsgServerTitle
-    m.innerHTML = myConfig.strings.modalMsgServer
-    modalEl.classList.add('modal-warning')
+    h.innerHTML = myConfig.strings.modalMsgServerTitle;
+    m.innerHTML = myConfig.strings.modalMsgServer;
+    modalEl.classList.add('modal-warning');
   } else {
-    m.innerHTML = msg
+    m.innerHTML = msg;
   }
-  mainEl.classList.add('showModal')
-  modalEl.classList.add('showModal')
-  isModal = true
+  mainEl.classList.add('showModal');
+  modalEl.classList.add('showModal');
+  isModal = true;
 }
 
 function closeModal() {
-  mainEl.classList.remove('showModal')
-  modalEl.classList.remove('showModal')
-  if (modalEl.classList.contains('modal-warning')) modalEl.classList.remove('modal-warning')
-  isModal = false
+  mainEl.classList.remove('showModal');
+  modalEl.classList.remove('showModal');
+  if (modalEl.classList.contains('modal-warning')) modalEl.classList.remove('modal-warning');
+  isModal = false;
 }
