@@ -70,7 +70,7 @@ class Track {
         document.documentElement.style.setProperty('--title-col', this.artwork.palette.color)
         document.documentElement.style.setProperty('--artist-col', this.artwork.palette.alternativeColor)
         let span = this.album.el.querySelector('span')
-        if (this.artwork.palette.spanColorContrast) {
+        if (span !== null && this.artwork.palette.spanColorContrast) {
           span.classList.add('contrasted')
         } else {
           if (span) {

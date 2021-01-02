@@ -1,23 +1,16 @@
+const url = 'ws://' + window.location.host;
 let track = new Track();
 let timers = [];
 let isModal = false;
 
-let mainEl, modalEl, modalBtn;
+let socket, mainEl, modalEl, modalBtn;
 
 window.addEventListener('load', (event) => {
   mainEl = document.querySelector('main');
-  modalEl = document.querySelector('#modalCenter');
-  modalBtn = modalEl.querySelector('.modal-header button');
-  modalBtn.onclick = () => {
-    closeModal();
-  };
-  
-  // Create an observer instance linked to the callback function
-  let observer = new MutationObserver(observerCallback);
-  // Start observing the target node for configured mutations
-  observer.observe(observerTarget, observerConfig);
+  modalEl = document.querySelector('.modal');
+  modalBtn = modalEl.querySelector('.modal-header .btn');
 
-  newWebSocket();
+  socket = newWebSocket();
 });
 
 document.addEventListener('keyup', (event) => {
@@ -27,22 +20,22 @@ document.addEventListener('keyup', (event) => {
 }, false);
 
 function newWebSocket(){
-  let socket = new WebSocket('ws://' + window.location.host);
+  let ws = new WebSocket(url);
 
-  socket.onopen = function (event) {
+  ws.onopen = function (event) {
     onOpen(event);
   }
-  socket.onclose = function (event) {
+  ws.onclose = function (event) {
     onClose(event);
   }
-  socket.onerror = function (err) {
+  ws.onerror = function (err) {
     onError(err);
   }
-  socket.onmessage = function (msg) {
+  ws.onmessage = function (msg) {
     onMessage(msg)
   }
+  return ws;
 }
-
 
 function onOpen(event) {
   console.log('Opening connection...');
@@ -76,7 +69,7 @@ function onMessage(msg) {
     closeModal();
     if (modalEl.classList.contains('modal-warning')) modalEl.classList.remove('modal-warning');
   }
-  console.log(msg);
+  // console.log(msg);
   switch (msg.type) {
     case 'welcome':
       console.log("Welcome new client.");
@@ -175,32 +168,15 @@ const position = function (data) {
   track.timerStart();
 };
 
-// Select the node that will be observed for mutations
-let observerTarget = track.title.el;
-
-// Options for the observer (which mutations to observe)
-let observerConfig = {
-  childList: true
-};
-
-// Callback function to execute when mutations are observed
-let observerCallback = function (mutationsList, observer) {
-  for (let mutation of mutationsList) {
-    if (mutation.type == 'childList') {
-      // demande au serveur d'envoyer la pochette si elle existe
-      let timeOutID = window.setTimeout(() => {
-        if (track.title.title !== '' && !track.artwork.isPresent) {
-          socket.send('requestPICT');
-        }
-      }, 5000);
-      window.clearTimeout(timeOutID);
-    }
-  }
-};
+const handleModal = function(e){
+  closeModal();
+  e.preventDefault();
+}
 
 function displayModal(msg) {
+  modalBtn.addEventListener('click', handleModal);
   let m = modalEl.querySelector('.modal-body');
-  let h = modalEl.querySelector('.modal-header h5');
+  let h = modalEl.querySelector('.modal-header *:first-child');
   if (msg === 'noInfo') {
     h.innerHTML = myConfig.strings.modalMsgInfosTitle;
     m.innerHTML = myConfig.strings.modalMsgInfos;
@@ -217,6 +193,7 @@ function displayModal(msg) {
 }
 
 function closeModal() {
+  modalBtn.removeEventListener('click', handleModal);
   mainEl.classList.remove('showModal');
   modalEl.classList.remove('showModal');
   if (modalEl.classList.contains('modal-warning')) modalEl.classList.remove('modal-warning');

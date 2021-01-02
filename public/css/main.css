@@ -12,12 +12,11 @@
   --title-col: hsl(0, 0%, 13%);
   --artist-col: hsl(0, 0%, 100%);
   --text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.65);
-  --modal-info: hsl(211, 90%, 60%);
   --modal-alert: hsl(12, 100%, 50%);
   --modal-alert-light: hsl(12, 100%, 90%);
-  --bg-blur: '';
-  --radius: .6rem;
   --bleu: hsl(210, 80%, 50%);
+  --bg-blur: '';
+  --radius: .4rem;
 }
 
 img {
@@ -161,6 +160,10 @@ main {
     border-top-right-radius: var(--radius);
   }
 
+  div#album {
+    margin-bottom: 1rem !important;
+  }
+
   #player {
     border-bottom-right-radius: var(--radius);
     border-bottom-left-radius: var(--radius);
@@ -179,8 +182,7 @@ main.showModal {
 div#title,
 div#artist,
 div#album {
-  margin-right: .8rem;
-  margin-left: .8rem;
+  margin: 0 1rem;
   text-align: right;
   overflow-wrap: break-word;
   hyphens: auto;
@@ -192,7 +194,7 @@ div#artist {
 }
 
 div#title {
-  font-size: 2.5rem;
+  font-size: 3rem;
   font-weight: 300;
   text-shadow: var(--text-shadow);
 }
@@ -203,15 +205,12 @@ div#title {
 
 div#artist,
 div#album {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-style: italic;
   font-weight: 300;
   text-shadow: var(--text-shadow);
 }
 
-div#album {
-  margin-bottom: .5rem;
-}
 
 .playing div#artist,
 .playing div#album {
@@ -342,20 +341,17 @@ div#elapsed {
   position: relative;
   width: calc(100vw - 6rem);
   max-width: 35rem;
-}
-
-.modal-content {
   display: flex;
   flex-direction: column;
-  width: 100%;
   background: #fff;
-  border: 2px solid var(--modal-info);
+  border: 2px solid var(--bleu);
   border-radius: .3rem;
   box-shadow: 2px 2px 6px rgba(0, 0, 0, .5);
   font-weight: 300;
+  padding: 1rem;
 }
 
-.modal-warning .modal-content {
+.modal-warning .modal-dialog {
   background: var(--modal-alert-light);
   color: var(--modal-alert);
   border-color: currentColor;
@@ -363,36 +359,62 @@ div#elapsed {
 
 .modal-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 1rem;
-  color: var(--modal-info);
+  color: var(--bleu);
 }
 
 .modal-warning .modal-header {
   color: var(--modal-alert);
 }
 
-.modal-header h5 {
-  margin: 0;
+.modal-header h3 {
   font-weight: normal;
   font-size: inherit;
 }
 
-.modal-header button {
-  background-color: transparent;
-  border: 0;
-  cursor: pointer;
-  line-height: 1;
+.modal-header .btn {
+  position: relative;
+  display: block;
+  width: 1.5em;
+  height: 1.5em;
+  text-decoration: none;
   opacity: .5;
-  text-shadow: 0 1px hsl(0, 0%, 100%);
 }
 
-.modal-header button:hover {
+.btn span::before,
+.btn span::after{
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: .125rem;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #222;
+}
+
+.btn span::before{
+  transform: rotate(45deg);
+}
+
+.btn span::after{
+  transform: rotate(-45deg);
+}
+
+@media (max-width: 768px) {
+  .modal-header .btn::before{
+    /* extends cliquable area on mobile */
+    content: '';
+    position: absolute;
+    top: -1em; right: -1em; bottom: -1em; left: -1em;
+  }
+}
+
+.modal-header .btn:hover {
   opacity: .75;
 }
 
 .modal-body {
-  position: relative;
-  padding: 1rem;
+  margin-top: 1.5rem;
 }
