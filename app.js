@@ -64,6 +64,8 @@ wss.on('connection', function(ws){
             updateTrack('PICT', ws)
             updateTrack('PICTmeta', ws)
             updateTrack('bgImg', ws)
+        }else{
+            updateTrack('noPICT', ws)
         }
     } else {
         ws.send('{"type": "noInfo"}')
@@ -194,6 +196,11 @@ function updateTrack(what, socket) {
         case 'volume':
             data = {
                 'volume': track.volume
+            }
+            break
+        case 'noPICT':
+            data = {
+                'isPresent': track.artwork.isPresent
             }
             break
         default:

@@ -9,9 +9,9 @@
 :root {
   --bg-artwork: hsl(227, 23%, 85%);
   --bg-initial: hsl(227, 23%, 85%);
-  --title-col: hsl(0, 0%, 13%);
-  --artist-col: hsl(0, 0%, 100%);
-  --text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.65);
+  --title-col: hsl(216, 92%, 50%);
+  --artist-col: hsl(330, 82%, 40%);
+  --text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   --modal-alert: hsl(12, 100%, 50%);
   --modal-alert-light: hsl(12, 100%, 90%);
   --bleu: hsl(210, 80%, 50%);
@@ -32,12 +32,15 @@ body {
   font-family: 'Lato', 'Roboto', Helvetica, Arial, sans-serif;
   font-size: 18px;
   text-rendering: optimizeLegibility;
+  transition: background-color .25s ease;
+}
+
+body.idle{ 
   background-image: linear-gradient(135deg, rgb(255, 93, 80), rgb(149, 80, 252) 50%, rgb(42, 203, 249));
   background-image: radial-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .55)),
     conic-gradient(rgb(255, 93, 80), rgb(216, 99, 150) 90deg, rgb(42, 203, 249) 180deg, rgb(149, 80, 252) 270deg, rgb(255, 93, 80));
   background-size: max(100vw, 100vh) max(100vw, 100vh);
   background-position: center;
-  transition: background-color .25s ease;
 }
 
 body.playing {
@@ -186,7 +189,16 @@ div#album {
   text-align: right;
   overflow-wrap: break-word;
   hyphens: auto;
+  font-weight: 300;
+  text-shadow: var(--text-shadow);
   transition: color .5s ease-in-out;
+}
+
+div#artist,
+div#album {
+  font-size: 2.5rem;
+  font-style: italic;
+  color: var(--artist-col);
 }
 
 div#artist {
@@ -195,33 +207,13 @@ div#artist {
 
 div#title {
   font-size: 3rem;
-  font-weight: 300;
-  text-shadow: var(--text-shadow);
-}
-
-.playing div#title {
   color: var(--title-col);
-}
-
-div#artist,
-div#album {
-  font-size: 2.5rem;
-  font-style: italic;
-  font-weight: 300;
-  text-shadow: var(--text-shadow);
-}
-
-
-.playing div#artist,
-.playing div#album {
-  color: var(--artist-col);
 }
 
 div#album>span {
   font-weight: 100;
   color: hsla(0, 0%, 100%, 1);
   font-size: .75em;
-  /* taille relative au parent, qui est le DIV */
 }
 
 div#album>span.contrasted {

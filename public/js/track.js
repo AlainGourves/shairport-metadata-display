@@ -56,6 +56,7 @@ class Track {
       this.album.el.innerHTML += ` <span>${this.yearAlbum}</span>`
     }
     if (this.title.title !== '') {
+      document.body.classList.remove('idle')
       document.body.classList.add('playing')
       document.title = `${this.artist.artist}, "${this.title.title}"`
     } else {
@@ -79,6 +80,8 @@ class Track {
         }
       }
     } else {
+      document.body.classList.remove('playing')
+      document.body.classList.add('idle')
       document.documentElement.style.setProperty('--bg-artwork', this.artwork.palette.default.backgroundColor)
       document.documentElement.style.setProperty('--title-col', this.artwork.palette.default.color)
       document.documentElement.style.setProperty('--artist-col', this.artwork.palette.default.alternativeColor)     
@@ -94,6 +97,7 @@ class Track {
     this.player.style.height = 0
     this.player.style.display = 'none'
     document.body.classList.remove('playing')
+    document.body.classList.add('idle')
     document.documentElement.style.setProperty('--bg-blur','')
     this.timeLine.querySelector('#elapsed').style.width = 0
     this.removeCaret()
