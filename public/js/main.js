@@ -6,13 +6,10 @@ let isModal = false;
 let socket, mainEl, modalEl, modalBtn;
 let timeout = 250; // tentatives de reconnexion de plus en plus espacées
 
-const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-
 function getTheTime(){
   let d = new Date();
   return  d.toLocaleTimeString() + ':' + d.getMilliseconds();
 }
-
 
 window.addEventListener('load', (event) => {
   mainEl = document.querySelector('main');
@@ -39,7 +36,8 @@ function newWebSocket(){
     onClose(event);
   }
   ws.onerror = function (err) {
-    onError(err);
+    console.error(getTheTime(), 'WebSocket error: ', err.message);
+    ws.close();
   }
   ws.onmessage = function (msg) {
     onMessage(msg)
@@ -60,27 +58,19 @@ function onClose(event) {
     console.log(getTheTime(), `Connection died, code=${event.code}`);
     if (!navigator.onLine){
       console.log(getTheTime(), "You're offline !")
-    }else{
-      console.log('Timeout: ', timeout);
-      setTimeout(newWebSocket, Math.min(10 * 1000, timeout+=timeout));
-    }
-  }
-};
-
-function onError(err) {
-  console.error(getTheTime(), 'WebSocket error: ', err.message);
-  // attend 1s avant d'essayer de se reconnecter
-  // si ça ne marche pas, affiche dialogue
-  wait(1000)
-    .then(()=>{
-      console.log("dans onError")
-      newWebSocket();
-    })
-    .catch(()=>{
       if (!isModal) {
+        displayModal('offline');
+      }
+    }else{
+      if (!isModal && timeout > 3000) {
         displayModal('connect_error');
       }
-    });
+      console.log('Timeout: ', timeout);
+      setTimeout(function() {
+        socket = newWebSocket();
+      }, Math.min(10000, timeout+=timeout));
+    }
+  }
 };
 
 function onMessage(msg) {
@@ -212,6 +202,10 @@ function displayModal(msg) {
   } else if (msg === 'connect_error') {
     h.innerHTML = myConfig.strings.modalMsgServerTitle;
     m.innerHTML = myConfig.strings.modalMsgServer;
+    modalEl.classList.add('modal-warning');
+  } else if (msg === 'offline') {
+    h.innerHTML = myConfig.strings.modalMsgServerTitle;
+    m.innerHTML = myConfig.strings.modalMsgOffline;
     modalEl.classList.add('modal-warning');
   } else {
     m.innerHTML = msg;
