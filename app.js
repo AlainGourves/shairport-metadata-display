@@ -17,7 +17,9 @@ app.disable('x-powered-by') // masquer express dans les headers
 const http = require('http')
 const server = http.createServer(app)
 // Initialize WebSocket server instance
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({
+    server: server
+});
 
 const fs = require('fs')
 
@@ -46,12 +48,6 @@ app.use(function(req, res, next) {
 app.use(function(err, req, res, next) {
     return res.status(500).send({ error: err })
 })
-
-function noop() {}
-
-function heartbeat() {
-  this.isAlive = true;
-}
 
 wss.on('connection', function(ws){
     console.log(new Date().toLocaleString(), ' >>> Client connected...');
@@ -162,13 +158,22 @@ function updateTrack(what, socket) {
             }
             break
         case 'PICT':
-            src = `data:image/${track.artwork.format};base64,${buf.toString('base64')}`
+            if (buf){
+                src = `data:image/${track.artwork.format};base64,${buf.toString('base64')}`
+            }else{
+                src = '';
+            }
             data = {
                 'src': src
             }
             break
         case 'bgImg':
-            src = `data:image/jpeg;base64,${bgImg.toString('base64')}`
+            // test au cas où le cas soit appelé avant que l'image ne soit pondue
+            if (bgImg){
+                src = `data:image/jpeg;base64,${bgImg.toString('base64')}`
+            }else{
+                src = ''
+            }
             data = {
                 'src': src
             }
@@ -212,14 +217,20 @@ function updateTrack(what, socket) {
     // {'type': what, 'msg': data}
     let msg = {'type': what,
                 'data': data}
-    if (socket) {
-        // envoie à un seul client
-        socket.send(JSON.stringify(msg));
-    } else {
-        // Broadcast
-        wss.clients.forEach(function each(client) {
-            client.send(JSON.stringify(msg));
-        });
+    try {
+        JSON.parse(JSON.stringify(msg));
+        if (socket) {
+            // envoie à un seul client
+            socket.send(JSON.stringify(msg));
+        } else {
+            // Broadcast
+            wss.clients.forEach(function each(client) {
+                client.send(JSON.stringify(msg));
+            });
+        }
+    } catch (err) {
+        console.log(new Date().toLocaleString(), ' >>> JSON Error: ', err);
+        console.log(msg);
     }
 }
 

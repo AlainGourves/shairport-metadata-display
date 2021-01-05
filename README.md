@@ -80,6 +80,12 @@ sudo systemctl enable shairport-display.service
 sudo systemctl start shairport-display.service
 ```
 
+To stop the service :
+
+```bash
+sudo systemctl stop shairport-display.service
+```
+
 To check the logs :
 
 ```bash

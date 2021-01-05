@@ -28,7 +28,7 @@ class Track {
         color: '',
         alternativeColor: '',
         spanColorContrast: false,
-        default : {
+        default: {
           backgroundColor: myConfig.defaultPalette.backgroundColor,
           color: myConfig.defaultPalette.color,
           alternativeColor: myConfig.defaultPalette.alternativeColor
@@ -84,12 +84,14 @@ class Track {
       document.body.classList.add('idle')
       document.documentElement.style.setProperty('--bg-artwork', this.artwork.palette.default.backgroundColor)
       document.documentElement.style.setProperty('--title-col', this.artwork.palette.default.color)
-      document.documentElement.style.setProperty('--artist-col', this.artwork.palette.default.alternativeColor)     
+      document.documentElement.style.setProperty('--artist-col', this.artwork.palette.default.alternativeColor)
     }
   }
 
   updatePICT() {
-    this.artwork.el.src = this.artwork.src
+    this.artwork.el.src = this.artwork.src;
+    document.body.classList.remove('idle');
+    document.body.classList.add('playing');
   }
 
   raz() {
@@ -98,7 +100,7 @@ class Track {
     this.player.style.display = 'none'
     document.body.classList.remove('playing')
     document.body.classList.add('idle')
-    document.documentElement.style.setProperty('--bg-blur','')
+    document.documentElement.style.setProperty('--bg-blur', '')
     this.timeLine.querySelector('#elapsed').style.width = 0
     this.removeCaret()
     this.timerEl.textContent = ''

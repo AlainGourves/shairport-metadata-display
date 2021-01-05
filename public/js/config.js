@@ -9,9 +9,9 @@ let myConfig = {
     height: 1024
   },
   defaultPalette : {
-    backgroundColor: 'hsl(0, 0%, 60%)',
-    color: 'hsl(0, 0%, 13.2%)',
-    alternativeColor: 'hsl(0, 0%, 100%)'
+    backgroundColor: 'hsl(227, 23%, 85%)',
+    color: 'hsl(216, 92%, 50%)',
+    alternativeColor: 'hsl(330, 82%, 40%)'
   },
   strings: {
     modalMsgInfosTitle: "Info",

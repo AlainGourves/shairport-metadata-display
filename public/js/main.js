@@ -4,6 +4,7 @@ let timers = [];
 let isModal = false;
 
 let socket, mainEl, modalEl, modalBtn;
+let timeout = 250; // tentatives de reconnexion de plus en plus espacées
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -28,7 +29,7 @@ document.addEventListener('keyup', (event) => {
 }, false);
 
 function newWebSocket(){
-  console.log(getTheTime(), "tentative de connexion")
+  console.log(getTheTime(), "Trying to connect...")
   let ws = new WebSocket(url);
 
   ws.onopen = function (event) {
@@ -47,21 +48,21 @@ function newWebSocket(){
 }
 
 function onOpen(event) {
-  console.log(getTheTime(), 'Opening connection...');
+  console.log(getTheTime(), 'Connection opened');
+  timeout = 250;
 };
 
 function onClose(event) {
   if (event.wasClean) {
-    console.log(getTheTime(), `Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+    console.log(getTheTime(), `Connection closed cleanly, code=${event.code}`);
   } else {
     // e.g. server process killed or network down
-    console.log(`getTheTime(), Connection died, code=${event.code}`);
+    console.log(getTheTime(), `Connection died, code=${event.code}`);
     if (!navigator.onLine){
       console.log(getTheTime(), "You're offline !")
     }else{
-      let timeout = 250; // tentatives de reconnexion de plus en plus espacées
       console.log('Timeout: ', timeout);
-      setTimeout (newWebSocket, Math.min(10000,timeout+=timeout));
+      setTimeout(newWebSocket, Math.min(10 * 1000, timeout+=timeout));
     }
   }
 };
@@ -71,7 +72,10 @@ function onError(err) {
   // attend 1s avant d'essayer de se reconnecter
   // si ça ne marche pas, affiche dialogue
   wait(1000)
-    .then(()=>newWebSocket())
+    .then(()=>{
+      console.log("dans onError")
+      newWebSocket();
+    })
     .catch(()=>{
       if (!isModal) {
         displayModal('connect_error');
@@ -85,7 +89,7 @@ function onMessage(msg) {
     closeModal();
     if (modalEl.classList.contains('modal-warning')) modalEl.classList.remove('modal-warning');
   }
-  console.log(msg);
+  console.log(getTheTime(), msg);
   switch (msg.type) {
     case 'welcome':
       console.log(getTheTime(), "Welcome new client.");
@@ -109,6 +113,13 @@ function onMessage(msg) {
       break;
     case 'trackInfos':
       trackInfos(msg.data);
+      // vérifie qu'il y a une pochette
+      setTimeout(() => {
+        if(!track.artwork.isPresent){
+          socket.send('requestPICT');
+          console.log(getTheTime(), 'Sending Pict Request');
+        }
+      }, 5000);
       break;
     case 'position':
       position(msg.data);
@@ -153,7 +164,6 @@ const PICT = function (data) {
 };
 
 const noPICT = function () {
-  track.artwork.isPresent = false;
   track.artwork.src = myConfig.defaultArtwork.src;
   track.artwork.dimensions.width = myConfig.defaultArtwork.width;
   track.artwork.dimensions.height = myConfig.defaultArtwork.height;
