@@ -29,7 +29,7 @@ body {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  font-family: 'Lato', 'Roboto', Helvetica, Arial, sans-serif;
+  font-family: 'Muslish', 'Roboto', Helvetica, Arial, sans-serif;
   font-size: 18px;
   text-rendering: optimizeLegibility;
   transition: background-color .25s ease;
@@ -211,6 +211,7 @@ div#artist {
 
 div#title {
   font-size: 3rem;
+  font-weight: 460;
   color: var(--title-col);
 }
 
@@ -253,8 +254,9 @@ div#player div {
 div#current,
 div#total{
   min-width: 6ch;
+  font-weight: 200;
   text-align: center;
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, .5);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, .75);
 }
 
 div#timeLine {
