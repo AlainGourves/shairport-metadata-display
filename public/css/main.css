@@ -25,20 +25,39 @@ img {
 }
 
 body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
+  display: grid;
+  place-content: center;
+  min-height: 100vh;
   font-family: 'Muslish', 'Roboto', Helvetica, Arial, sans-serif;
-  font-size: 18px;
+  /* font-size: 18px; */
   text-rendering: optimizeLegibility;
   transition: background-color .25s ease;
 }
 
-body.idle{ 
-  background-image: linear-gradient(135deg, rgb(255, 93, 80), rgb(149, 80, 252) 50%, rgb(42, 203, 249));
-  background-image: radial-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .55)),
-    conic-gradient(rgb(255, 93, 80), rgb(216, 99, 150) 90deg, rgb(42, 203, 249) 180deg, rgb(149, 80, 252) 270deg, rgb(255, 93, 80));
+body.idle {
+  background-image: linear-gradient(135deg,
+      hsl(4, 100%, 66%),
+      hsl(264, 97%, 65%) 50%,
+      hsl(193, 95%, 57%));
+  background-image: linear-gradient(135deg,
+      hsl(4deg 100% 66%) 0%,
+      hsl(339deg 100% 60%) 14%,
+      hsl(320deg 93% 53%) 29%,
+      hsl(289deg 75% 56%) 43%,
+      hsl(238deg 100% 71%) 57%,
+      hsl(204deg 100% 50%) 71%,
+      hsl(197deg 100% 50%) 86%,
+      hsl(193deg 95% 57%) 100%);
+  background-image:
+    radial-gradient(
+      rgba(0, 0, 0, 0) 50%,
+      rgba(0, 0, 0, .55)),
+    conic-gradient(
+      rgb(255, 93, 80),
+      rgb(216, 99, 150) 90deg,
+      rgb(42, 203, 249) 180deg,
+      rgb(149, 80, 252) 270deg,
+      rgb(255, 93, 80));
   background-size: max(100vw, 100vh) max(100vw, 100vh);
   background-position: center;
 }
@@ -97,7 +116,7 @@ body.playing {
 /* Extra large devices */
 @media only screen and (min-width: 1200px) {
   html {
-    font-size: 16px;
+    font-size: 18px;
   }
 
   main {
@@ -182,7 +201,7 @@ main.showModal {
   filter: blur(6px)
 }
 
-div#infos{
+div#infos {
   transition: height .5s ease-in-out;
 }
 
@@ -239,7 +258,7 @@ div#player {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  background-color: rgba(0,0,0, 0.7);
+  background-color: rgba(0, 0, 0, 0.7);
   color: #fff;
   font-size: 11px;
   overflow: hidden;
@@ -252,7 +271,7 @@ div#player div {
 }
 
 div#current,
-div#total{
+div#total {
   min-width: 6ch;
   font-weight: 200;
   text-align: center;
@@ -262,7 +281,7 @@ div#total{
 div#timeLine {
   --timeline-width: 2px;
   flex-basis: 100%;
-  padding: 0!important;
+  padding: 0 !important;
   position: relative;
   align-self: stretch;
 }
@@ -290,7 +309,7 @@ div#timeLine svg .st0 {
 div#duration,
 div#elapsed {
   position: absolute;
-  padding: 0!important;
+  padding: 0 !important;
   height: var(--timeline-width);
   left: 0;
   top: 50%;
@@ -380,7 +399,7 @@ div#elapsed {
 }
 
 .btn span::before,
-.btn span::after{
+.btn span::after {
   content: '';
   position: absolute;
   width: 100%;
@@ -391,20 +410,23 @@ div#elapsed {
   background-color: #222;
 }
 
-.btn span::before{
+.btn span::before {
   transform: rotate(45deg);
 }
 
-.btn span::after{
+.btn span::after {
   transform: rotate(-45deg);
 }
 
 @media (max-width: 768px) {
-  .modal-header .btn::before{
+  .modal-header .btn::before {
     /* extends cliquable area on mobile */
     content: '';
     position: absolute;
-    top: -1em; right: -1em; bottom: -1em; left: -1em;
+    top: -1em;
+    right: -1em;
+    bottom: -1em;
+    left: -1em;
   }
 }
 
