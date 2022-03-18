@@ -2,11 +2,10 @@
 .vscode/*
 .jshintrc
 nodemon.json
-package-lock.json
 public/doc/*
 TODO.md
+_tmp.*
 
-tmp_*.png
 # Dependency directories
 node_modules
 
@@ -16,4 +15,4 @@ node_modules
 # Optional REPL history
 .node_repl_history
 
-._package.json
+._*

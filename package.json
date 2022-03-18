@@ -19,17 +19,16 @@
   "dependencies": {
     "color": "^3.1.2",
     "compression": "^1.7.4",
-    "cquant": "^0.1.5",
     "daap-parser": "^0.1.1",
-    "dotenv": "^8.2.0",
+    "dotenv": "^8.6.0",
     "express": "^4.17.0",
+    "gm": "^1.23.1",
+    "imagecolors": "^0.13.1",
     "shairport-sync-reader": "0.0.9",
-    "sharp": "^0.25.2",
     "ws": "^7.4.1"
   },
   "devDependencies": {
-    "html5-boilerplate": "^7.3.0",
-    "jshint": "^2.11.0"
+    "jshint": "^2.13.4"
   },
   "scripts": {
     "start": "node app.js",

@@ -29,8 +29,8 @@ body {
   place-content: center;
   min-height: 100vh;
   font-family: 'Muslish', 'Roboto', Helvetica, Arial, sans-serif;
-  /* font-size: 18px; */
   text-rendering: optimizeLegibility;
+  background-size: cover;
   transition: background-color .25s ease;
 }
 
@@ -58,15 +58,13 @@ body.idle {
       rgb(42, 203, 249) 180deg,
       rgb(149, 80, 252) 270deg,
       rgb(255, 93, 80));
-  background-size: max(100vw, 100vh) max(100vw, 100vh);
-  background-position: center;
+  background-size: 100vmax;
 }
 
 body.playing {
   background-color: var(--bg-artwork);
   background-image: var(--bg-blur);
-  background-size: cover;
-  background-position-y: center;
+  background-position: 50%;
 }
 
 /* Extra small devices */

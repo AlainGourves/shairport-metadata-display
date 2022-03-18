@@ -1,7 +1,8 @@
 const ShairportReader = require('shairport-sync-reader')
 const compression = require('compression') // to use gzip compression
-const cquant = require('cquant') // use sharp to convert image to RGB Buffer Array
-const sharp = require('sharp')
+const gm = require('gm').subClass({ imageMagick: true });
+const imageColors = require('imagecolors');
+
 const Color = require('color')
 const glob = require('glob')
 const express = require('express')
@@ -21,14 +22,17 @@ const wss = new WebSocket.Server({
     server: server
 });
 
-const fs = require('fs')
+const fs = require('fs');
 
-const Track = require('./Track.js')
-let track = new Track()
-let currentAlbum
-let prevAlbum
-let buf
-let bgImg
+const Track = require('./Track.js');
+let track = new Track();
+let prevTrack;
+let currentAlbum, prevAlbum;
+let buf;
+let url;
+let bgImg;
+
+const debug = true;
 
 server.listen(port, () => {
     console.log(`listening on port: ${server.address().port}`);
@@ -40,16 +44,16 @@ app.get('/', function (req, res) {
 })
 
 // Route not found (404)
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
     return res.status(404).sendFile(__dirname + '/public/404.html')
 })
 
 // 500 - Any server error
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
     return res.status(500).send({ error: err })
 })
 
-wss.on('connection', function(ws){
+wss.on('connection', function (ws) {
     console.log(new Date().toLocaleString(), ' >>> Client connected...');
     ws.send('{"type": "welcome"}')
 
@@ -60,16 +64,16 @@ wss.on('connection', function(ws){
             updateTrack('PICT', ws)
             updateTrack('PICTmeta', ws)
             updateTrack('bgImg', ws)
-        }else{
+        } else {
             updateTrack('noPICT', ws)
         }
     } else {
         ws.send('{"type": "noInfo"}')
     }
 
-    ws.on('message', function(msg){
+    ws.on('message', function (msg) {
         console.log('Received: ', msg);
-        if(msg === 'requestPICT'){
+        if (msg === 'requestPICT') {
             if (track.artwork.isPresent) {
                 updateTrack('PICT', ws)
                 updateTrack('PICTmeta', ws)
@@ -79,7 +83,7 @@ wss.on('connection', function(ws){
         }
     })
 
-    ws.on('close', function(){
+    ws.on('close', function () {
         console.log(new Date().toLocaleString(), ' >>> Client gone.');
     })
 })
@@ -87,34 +91,35 @@ wss.on('connection', function(ws){
 // read from pipe
 let pipeReader = new ShairportReader({
     path: process.env.FIFO
-})
+});
+
 pipeReader
     .on('meta', function (meta) {
-        // console.log('ev: meta') //, meta)
+        if (debug) console.log('\n--------------------------\nev: meta');
         if (currentAlbum !== undefined) {
-            if (currentAlbum !== prevAlbum) bgImg = undefined
-            prevAlbum = currentAlbum
+            if (debug) console.log('prevAlbum', currentAlbum);
+            prevAlbum = currentAlbum;
         }
-        currentAlbum = meta.asai // `asai` : album ID (DAAP code)
-        // console.log('albumID:', currentAlbum)
-        track = new Track()
-        track.artist = meta.asar
-        track.title = meta.minm
-        track.album = meta.asal
-        track.yearAlbum = meta.asyr
-        if (meta.astm !== undefined) {
-            track.duration = meta.astm
-        }
-        updateTrack('trackInfos')
+        currentAlbum = meta.asai; // `asai` : album ID (DAAP code)
+        if (currentAlbum !== prevAlbum) bgImg = undefined
+        if (debug) console.log('albumID:', currentAlbum);
+        prevTrack = track;
+        track = new Track();
+        track.artist = meta.asar;
+        track.title = meta.minm;
+        track.album = meta.asal;
+        track.yearAlbum = meta.asyr;
+        track.duration = (meta.astm) ? meta.astm : undefined;
+        updateTrack('trackInfos');
     })
     .on('pvol', function (pvol) {
-        // console.log('ev: pvol')
+        if (debug) console.log('ev: pvol')
         // volume entre 0 (muet) et 100 (à fond)
-        track.volume = map(pvol.volume, pvol.lowest, pvol.highest, 0, 100)
+        track.volume = scale(pvol.volume, pvol.lowest, pvol.highest, 0, 100)
         updateTrack('volume')
     })
     .on('prgr', function (prgr) {
-        // console.log('ev: prgr') //, prgr)
+        if (debug) console.log('ev: prgr') //, prgr)
         if (track.duration === 0) {
             track.duration = totalLength(prgr)
         }
@@ -122,14 +127,14 @@ pipeReader
         updateTrack('position')
     })
     .on('pfls', function (pfls) {
-        // console.log('ev: pfls')
+        if (debug) console.log('ev: pfls')
         // Pause/Stop : envoie un  message pour vider l'affichage
         wss.clients.forEach(function each(client) {
             client.send('{"type": "pause"}');
         });
     })
     .on('pend', function () {
-        // console.log('ev: pend')
+        if (debug) console.log('ev: pend')
         // fin du stream
         track = new Track()
         wss.clients.forEach(function each(client) {
@@ -137,12 +142,10 @@ pipeReader
         });
     })
     .on('PICT', function (PICT) {
-        // console.log('ev: PICT')
-        buf = Buffer.from(PICT, 'base64')
-        track.artwork.isPresent = true
-
-        let image = sharp(buf)
-        processPICT(image)
+        if (debug) console.log('ev: PICT');
+        buf = Buffer.from(PICT, 'base64');
+        track.artwork.isPresent = true;
+        processPICT(buf);
     })
 
 function updateTrack(what, socket) {
@@ -158,27 +161,19 @@ function updateTrack(what, socket) {
             }
             break
         case 'PICT':
-            if (buf){
-                src = `data:image/${track.artwork.format};base64,${buf.toString('base64')}`
-            }else{
-                src = '';
-            }
             data = {
-                'src': src
+                'src': (buf) ? `data:image/${track.artwork.format};base64,${buf.toString('base64')}` : ''
             }
             break
         case 'bgImg':
-            // test au cas où le cas soit appelé avant que l'image ne soit pondue
-            if (bgImg){
-                src = `data:image/jpeg;base64,${bgImg.toString('base64')}`
-            }else{
-                src = ''
-            }
             data = {
-                'src': src
+                'src': (bgImg) ? `data:image/jpeg;base64,${bgImg.toString('base64')}` : ''
             }
             break
         case 'PICTmeta':
+            if (currentAlbum === prevAlbum) {
+                track.artwork = prevTrack.artwork;
+            }
             data = {
                 'dimensions': {
                     'width': track.artwork.dimensions.width,
@@ -215,10 +210,12 @@ function updateTrack(what, socket) {
     }
     // Formater le message en objet JSON :
     // {'type': what, 'msg': data}
-    let msg = {'type': what,
-                'data': data}
+    let msg = {
+        'type': what,
+        'data': data
+    }
     try {
-        JSON.parse(JSON.stringify(msg));
+        JSON.parse(JSON.stringify(msg)); // TODO ????
         if (socket) {
             // envoie à un seul client
             socket.send(JSON.stringify(msg));
@@ -229,130 +226,117 @@ function updateTrack(what, socket) {
             });
         }
     } catch (err) {
-        console.log(new Date().toLocaleString(), ' >>> JSON Error: ', err);
-        console.log(msg);
+        if (debug) console.error(new Date().toLocaleString(), ' >>> JSON Error: ', err);
+        if (debug) console.log(msg);
     }
 }
 
-async function processPICT(image) {
-    try {
-        // 1) Metadata
-        const metadata = await image.metadata()
-        track.artwork.format = metadata.format
-        track.artwork.dimensions.width = metadata.width
-        track.artwork.dimensions.height = metadata.height
-        // 2) Color palette
-        const colorCount = 5
-        let colors = []
-        let luminances = []
-        let ratios = []
-        const imgBuf = await image.raw().toBuffer({ resolveWithObject: true })
-        let responseCQuant = await cquant.paletteAsync(imgBuf.data, imgBuf.info.channels, colorCount)
-        responseCQuant.forEach(element => {
-            colors.push(Color({
-                r: element.R,
-                g: element.G,
-                b: element.B
-            }))
-            // calcul luminance de la couleur
-            luminances.push(colorLuminance([element.R, element.G, element.B]))
-        })
-        for (let i = 1; i < colorCount; i++) {
-            // calcul du contrast ratio entre la couleur i et la couleur dominante
-            ratios.push({
-                'idx': i,
-                'ctr': calcContrastRatio(luminances[0], luminances[i])
-            })
+function extractPalette(path) {
+    let bgColor, primaryColor, secondaryColor;
+    imageColors.extract(path, 5, (err, colors) => {
+        if (err && debug) console.error('extractPalette', err)
+        // Sélection des couleurs
+        // Note: la fonction de calcul de luminance d'imageColors est moins complète,
+        // donc on va recalculer les valeurs avec
+        // https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef 
+
+        // 1) background-color : couleur qui a le pourcentage le plus grand
+        const byPercent = colors.sort((a, b) => b.percent - a.percent);
+        bgColor = byPercent[0];
+        bgColor.lumi = colorLuminance(Object.values(bgColor.rgb));
+
+        track.artwork.palette.backgroundLuminance = bgColor.lumi;
+        track.artwork.palette.backgroundColor = toHslString(bgColor.hsl);
+
+        // Couleurs restantes
+        let remainingColors = colors.filter(c => c.hex !== bgColor.hex);
+        // ajoute une propriété `contrast ratio` à chaque couleur (comparaison avec bgColor)
+        remainingColors.forEach(c => c.lumi = colorLuminance(Object.values(c.rgb)));
+        remainingColors.forEach(c => c.cr = calcContrastRatio(bgColor.lumi, c.lumi));
+        remainingColors.sort((a, b) => b.cr - a.cr); // tri sur le contrast ratio
+
+        // 2) titre
+        primaryColor = remainingColors[0];
+        if (debug) console.log("primary:", primaryColor.hex, toHslString(primaryColor.hsl))
+        if (primaryColor.cr < 3) {
+            // réglage de la couleur
+            // if (debug) console.log("couleur:", primaryColor, "background:", bgColor)
         }
-        // Stocke la luminance de background color
-        track.artwork.palette.backgroundLuminance = luminances[0]
-        // la couleur de background est la couleur dominante
-        track.artwork.palette.backgroundColor = colors[0].hsl().string()
-        // la couleur du titre est la 2e dominante
-        if (ratios[0].ctr >= 3) {
-            track.artwork.palette.color = colors[1].hsl().string()
-        } else {
-            // corrige la couleur pour obtenir le bon contraste
-            try {
-                let arr = tuneColor(colors[1], ratios[0].ctr)
-                let newCol = Color.hsl(arr)
-                track.artwork.palette.color = newCol.hsl().string()
-            } catch (error) {
-                console.log(error)
-            }
+        track.artwork.palette.color = toHslString(primaryColor.hsl);
+
+        // 3) artite/alabum
+        secondaryColor = remainingColors[1];
+        if (debug) console.log("secondary:", secondaryColor.hex, toHslString(secondaryColor.hsl))
+        if (secondaryColor.cr < 3) {
+            // réglage de la couleur
+            // if (debug) console.log("couleur:", secondaryColor, "background:", bgColor)
         }
-        // Choix de la 3e couleur :
-        ratios.shift()
-        // nbre de couleurs restantes dont le CR est bon
-        let s = ratios.filter(el => {
-            return el.ctr >= 3
-        })
-        if (s.length === 1) {
-            track.artwork.palette.alternativeColor = colors[s[0].idx].hsl().string()
-        } else if (s.length >= 2) {
-            let idx = Math.floor(Math.random() * s.length)
-            track.artwork.palette.alternativeColor = colors[s[idx].idx].hsl().string()
-        } else {
-            // Pas de couleur idoine, on prend celle qui a le contrast ratio le + proche et on la corrige
-            ratios.sort((a, b) => {
-                return b.ctr - a.ctr
-            })
-            try {
-                let c = colors[ratios[0].idx]
-                let arr = tuneColor(c, ratios[0].ctr)
-                let newCol = Color.hsl(arr)
-                track.artwork.palette.alternativeColor = newCol.hsl().string()
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        // Année album
-        if (track.yearAlbum !== '') {
-            // contrast ratio white/bg color
-            let cr = calcContrastRatio(1, luminances[0])
-            if (cr < 3) {
-                track.artwork.palette.spanColorContrast = true
-            }
-        }
+        track.artwork.palette.alternativeColor = toHslString(secondaryColor.hsl);
+
         updateTrack('PICT')
         updateTrack('PICTmeta')
-        // 3) Background image
-        if (currentAlbum !== prevAlbum || bgImg === undefined) {
-            // supprime les fichiers temporaires
-            glob('tmp_*', (err, files) => {
-                if (err) console.log('glob error:', err)
-                files.forEach((f) => {
-                    fs.unlink(f, (err) => {
-                        if (err) throw err
-                    })
-                })
-            })
-            const f = `tmp_${myHash()}.png`
-            const thumbnail = await image.resize({
-                    width: 100
-                })
-                .blur(1)
-                .toFormat('png')
-                .toFile(f)
-            bgImg = await sharp(f).resize({
-                    width: 1024,
-                    kernel: sharp.kernel.cubic
-                })
-                .blur(32)
-                .modulate({
-                    brightness: 1.1,
-                    saturation: 1.25
-                })
-                .jpeg({
-                    quality: 80
-                })
-                .toBuffer()
-            updateTrack('bgImg')
-        } else if (bgImg !== undefined) {
-            updateTrack('bgImg')
+    })
+}
+
+function generateBackground(path) {
+    //  Background image
+    gm(path)
+        // .resize(256)
+        // .blur(8, 3) 
+        .toBuffer('PNG', (err, tmpBuffer) => {
+            if (err & debug) console.error("toBuffer", err);
+            gm(tmpBuffer)
+                .resize(1024)
+                .blur(128, 4)// sur la valeur de sigma : https://stackoverflow.com/questions/23007064/effect-of-variance-sigma-at-gaussian-smoothing
+                .modulate(125, 105) // % change in brightness & saturation
+                .quality(75)
+                .toBuffer((err, newBuffer) => {
+                    bgImg = newBuffer;
+                    updateTrack('bgImg')
+                    if (debug) console.log('bgImg générée !')
+                });
+        });
+}
+
+async function processPICT(buf) {
+    if (!bgImg || currentAlbum !== prevAlbum) {
+        try {
+            gm(buf).identify((err, data) => {
+                if (err && debug) console.error("metadata size", err);
+                const w = data.size.width;
+                const h = data.size.height;
+                const f = data.format.toLowerCase();
+                if (debug) console.log('image:', w, 'x', h, `(${f})`);
+                track.artwork.dimensions.width = w;
+                track.artwork.dimensions.height = h;
+                track.artwork.format = f;
+                url = `${__dirname}/_tmp.${f}`;
+
+                // Si width > 512px, on réduit l'image pour accélérer le processus
+                if (w > 512) {
+                    gm(buf).resize(512)
+                        .resize(512)
+                        .write(url, (err, data) => {
+                            if (err && debug) console.error("erreur écriture", err)
+                            extractPalette(url);
+                            generateBackground(url);
+                        })
+                } else {
+                    gm(buf)
+                        .write(url, (err, data) => {
+                            if (err && debug) console.error("erreur écriture", err)
+                            extractPalette(url);
+                            generateBackground(url);
+                        })
+                }
+            });
+        } catch (err) {
+            if (debug) console.error('err processPICT:', err)
         }
-    } catch (err) {
-        console.log('err:', err)
+    } else {
+        updateTrack('bgImg');
+        updateTrack('PICT');
+        updateTrack('PICTmeta');
     }
 }
 
@@ -479,7 +463,8 @@ function totalLength(progress) {
     return Math.floor((progress.end - progress.start) / 44.1) //44.1 frame par milliseconde
 }
 
-function map(x, inMin, inMax, outMin, outMax) {
+// la fonction s'appelait map() avant, mais le nom est malheureux
+function scale(x, inMin, inMax, outMin, outMax) {
     return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin
 }
 
@@ -487,6 +472,11 @@ function copyObject(src) {
     return Object.assign({}, src)
 }
 
-function myHash() {
-    return Math.random().toString(36).substring(2, 12)
+// function myHash() {
+//     return Math.random().toString(36).substring(2, 12)
+// }
+
+function toHslString(hsl) {
+    let h = Math.round(hsl.h), s = Math.round(hsl.s), l = Math.round(hsl.l);
+    return `hsl(${h}, ${s}%, ${l}%)`;
 }
