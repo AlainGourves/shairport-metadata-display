@@ -6,9 +6,9 @@ let isModal = false;
 let socket, mainEl, modalEl, modalBtn;
 let timeout = 250; // tentatives de reconnexion de plus en plus espacées
 
-function getTheTime(){
+function getTheTime() {
   let d = new Date();
-  return  d.toLocaleTimeString() + ':' + d.getMilliseconds();
+  return d.toLocaleTimeString() + ':' + d.getMilliseconds();
 }
 
 window.addEventListener('load', (event) => {
@@ -25,7 +25,7 @@ document.addEventListener('keyup', (event) => {
   }
 }, false);
 
-function newWebSocket(){
+function newWebSocket() {
   console.log(getTheTime(), "Trying to connect...")
   let ws = new WebSocket(url);
 
@@ -53,24 +53,27 @@ function onOpen(event) {
 function onClose(event) {
   if (event.wasClean) {
     console.log(getTheTime(), `Connection closed cleanly, code=${event.code}`);
-  } else {
-    // e.g. server process killed or network down
-    console.log(getTheTime(), `Connection died, code=${event.code}`);
-    if (!navigator.onLine){
-      console.log(getTheTime(), "You're offline !")
-      if (!isModal) {
-        displayModal('offline');
-      }
-    }else{
-      if (!isModal && timeout > 3000) {
-        displayModal('connect_error');
-      }
-      console.log('Timeout: ', timeout);
-      setTimeout(function() {
-        socket = newWebSocket();
-      }, Math.min(10000, timeout+=timeout));
-    }
+    return;
   }
+
+  // e.g. server process killed or network down
+  console.log(getTheTime(), `Connection died, code=${event.code}`);
+
+  if (!navigator.onLine) {
+    console.log(getTheTime(), "You're offline !")
+    if (!isModal) {
+      displayModal('offline');
+    }
+    return;
+  }
+
+  if (!isModal && timeout > 3000) {
+    displayModal('connect_error');
+  }
+  console.log('Timeout: ', timeout);
+  setTimeout(function () {
+    socket = newWebSocket();
+  }, Math.min(10000, timeout += timeout));
 };
 
 function onMessage(msg) {
@@ -105,7 +108,7 @@ function onMessage(msg) {
       trackInfos(msg.data);
       // vérifie qu'il y a une pochette
       setTimeout(() => {
-        if(!track.artwork.isPresent){
+        if (!track.artwork.isPresent) {
           socket.send('requestPICT');
           console.log(getTheTime(), 'Sending Pict Request');
         }
@@ -187,7 +190,7 @@ const position = function (data) {
   track.timerStart();
 };
 
-const handleModal = function(e){
+const handleModal = function (e) {
   closeModal();
   e.preventDefault();
 }
@@ -196,19 +199,24 @@ function displayModal(msg) {
   modalBtn.addEventListener('click', handleModal);
   let m = modalEl.querySelector('.modal-body');
   let h = modalEl.querySelector('.modal-header *:first-child');
-  if (msg === 'noInfo') {
-    h.innerHTML = myConfig.strings.modalMsgInfosTitle;
-    m.innerHTML = myConfig.strings.modalMsgInfos;
-  } else if (msg === 'connect_error') {
-    h.innerHTML = myConfig.strings.modalMsgServerTitle;
-    m.innerHTML = myConfig.strings.modalMsgServer;
-    modalEl.classList.add('modal-warning');
-  } else if (msg === 'offline') {
-    h.innerHTML = myConfig.strings.modalMsgServerTitle;
-    m.innerHTML = myConfig.strings.modalMsgOffline;
-    modalEl.classList.add('modal-warning');
-  } else {
-    m.innerHTML = msg;
+  switch (msg) {
+    case 'noInfo':
+      h.innerHTML = myConfig.strings.modalMsgInfosTitle;
+      m.innerHTML = myConfig.strings.modalMsgInfos;
+      break;
+    case 'connect_error':
+      h.innerHTML = myConfig.strings.modalMsgServerTitle;
+      m.innerHTML = myConfig.strings.modalMsgServer;
+      modalEl.classList.add('modal-warning');
+      break;
+    case 'offline':
+      h.innerHTML = myConfig.strings.modalMsgServerTitle;
+      m.innerHTML = myConfig.strings.modalMsgOffline;
+      modalEl.classList.add('modal-warning');
+      break;
+    default:
+      m.innerHTML = msg;
+      break;
   }
   mainEl.classList.add('showModal');
   modalEl.classList.add('showModal');

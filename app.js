@@ -1,22 +1,23 @@
-const ShairportReader = require('shairport-sync-reader')
-const compression = require('compression') // to use gzip compression
+const ShairportReader = require('shairport-sync-reader');
+const compression = require('compression'); // to use gzip compression
 const gm = require('gm').subClass({ imageMagick: true });
 const imageColors = require('imagecolors');
 
-const Color = require('color')
-const glob = require('glob')
-const express = require('express')
-const WebSocket = require('ws')
-require('dotenv').config()
+const Color = require('color');
+const glob = require('glob');
+const express = require('express');
+const WebSocket = require('ws');
+require('dotenv').config();
 
-const app = express()
-const port = process.env.PORT
-app.use(compression())
-app.use(express.static('public'))
-app.disable('x-powered-by') // masquer express dans les headers
+// Server
+const app = express();
+const port = process.env.PORT;
+app.use(compression());
+app.use(express.static('public'));
+app.disable('x-powered-by'); // masquer express dans les headers
 
-const http = require('http')
-const server = http.createServer(app)
+const http = require('http');
+const server = http.createServer(app);
 // Initialize WebSocket server instance
 const wss = new WebSocket.Server({
     server: server
@@ -40,46 +41,46 @@ server.listen(port, () => {
 
 // Routes ----------------------
 app.get('/', function (req, res) {
-    res.sendFile(__dirname + 'public/index.html')
+    res.sendFile(__dirname + 'public/index.html');
 })
 
 // Route not found (404)
 app.use(function (req, res, next) {
-    return res.status(404).sendFile(__dirname + '/public/404.html')
+    return res.status(404).sendFile(__dirname + '/public/404.html');
 })
 
 // 500 - Any server error
 app.use(function (err, req, res, next) {
-    return res.status(500).send({ error: err })
+    return res.status(500).send({ error: err });
 })
 
 wss.on('connection', function (ws) {
     console.log(new Date().toLocaleString(), ' >>> Client connected...');
-    ws.send('{"type": "welcome"}')
+    ws.send('{"type": "welcome"}');
 
     if (track.title !== '') {
         // pour n'envoyer les infos qu'au nouveau connecté
-        updateTrack('trackInfos', ws)
+        updateTrack('trackInfos', ws);
         if (track.artwork.isPresent) {
-            updateTrack('PICT', ws)
-            updateTrack('PICTmeta', ws)
-            updateTrack('bgImg', ws)
+            updateTrack('PICT', ws);
+            updateTrack('PICTmeta', ws);
+            updateTrack('bgImg', ws);
         } else {
-            updateTrack('noPICT', ws)
+            updateTrack('noPICT', ws);
         }
     } else {
-        ws.send('{"type": "noInfo"}')
+        ws.send('{"type": "noInfo"}');
     }
 
     ws.on('message', function (msg) {
         console.log('Received: ', msg);
         if (msg === 'requestPICT') {
             if (track.artwork.isPresent) {
-                updateTrack('PICT', ws)
-                updateTrack('PICTmeta', ws)
-            } else {
-                ws.send('{"type": "noPICT"}')
+                updateTrack('PICT', ws);
+                updateTrack('PICTmeta', ws);
+                return;
             }
+            ws.send('{"type": "noPICT"}');
         }
     })
 
@@ -113,33 +114,29 @@ pipeReader
         updateTrack('trackInfos');
     })
     .on('pvol', function (pvol) {
-        if (debug) console.log('ev: pvol')
+        if (debug) console.log('ev: pvol');
         // volume entre 0 (muet) et 100 (à fond)
-        track.volume = scale(pvol.volume, pvol.lowest, pvol.highest, 0, 100)
-        updateTrack('volume')
+        track.volume = scale(pvol.volume, pvol.lowest, pvol.highest, 0, 100);
+        updateTrack('volume');
     })
     .on('prgr', function (prgr) {
-        if (debug) console.log('ev: prgr') //, prgr)
+        if (debug) console.log('ev: prgr');
         if (track.duration === 0) {
-            track.duration = totalLength(prgr)
+            track.duration = totalLength(prgr);
         }
-        track.currPosition = elapsed(prgr)
-        updateTrack('position')
+        track.currPosition = elapsed(prgr);
+        updateTrack('position');
     })
     .on('pfls', function (pfls) {
-        if (debug) console.log('ev: pfls')
+        if (debug) console.log('ev: pfls');
         // Pause/Stop : envoie un  message pour vider l'affichage
-        wss.clients.forEach(function each(client) {
-            client.send('{"type": "pause"}');
-        });
+        wss.clients.forEach(client => client.send('{"type": "pause"}'));
     })
     .on('pend', function () {
-        if (debug) console.log('ev: pend')
+        if (debug) console.log('ev: pend');
         // fin du stream
-        track = new Track()
-        wss.clients.forEach(function each(client) {
-            client.send('{"type": "stop"}');
-        });
+        track = new Track();
+        wss.clients.forEach(client => client.send('{"type": "stop"}'));
     })
     .on('PICT', function (PICT) {
         if (debug) console.log('ev: PICT');
@@ -149,12 +146,12 @@ pipeReader
     })
 
 function updateTrack(what, socket) {
-    let data, src
+    let data, src;
     switch (what) {
         case 'trackInfos':
             data = {
                 'artist': track.artist,
-                'title': track.title,
+                'title': prepareTitle(track.title),
                 'album': track.album,
                 'yearAlbum': track.yearAlbum,
                 'duration': track.duration
@@ -215,16 +212,16 @@ function updateTrack(what, socket) {
         'data': data
     }
     try {
-        JSON.parse(JSON.stringify(msg)); // TODO ????
         if (socket) {
             // envoie à un seul client
             socket.send(JSON.stringify(msg));
-        } else {
-            // Broadcast
-            wss.clients.forEach(function each(client) {
-                client.send(JSON.stringify(msg));
-            });
+            return;
         }
+        // Default : broadcast
+        wss.clients.forEach(function each(client) {
+            client.send(JSON.stringify(msg));
+        });
+
     } catch (err) {
         if (debug) console.error(new Date().toLocaleString(), ' >>> JSON Error: ', err);
         if (debug) console.log(msg);
@@ -430,8 +427,8 @@ function getNewContrastRatio(col, direction, increment, overshoot = false) {
  * @param c2    Array   [R, G, B]
  */
 function colorDistance(c1, c2) {
-    let r = (c1[0] + c2[0]) / 2
-    return Math.sqrt((2 + r / 256) * (Math.pow(c2[0] - c1[0], 2)) + 4 * (Math.pow(c2[1] - c1[1], 2)) + (2 + (255 - r) / 256) * (Math.pow(c2[2] - c1[2], 2)))
+    let r = (c1[0] + c2[0]) / 2;
+    return Math.sqrt((2 + r / 256) * (Math.pow(c2[0] - c1[0], 2)) + 4 * (Math.pow(c2[1] - c1[1], 2)) + (2 + (255 - r) / 256) * (Math.pow(c2[2] - c1[2], 2)));
 }
 
 /**
@@ -439,37 +436,37 @@ function colorDistance(c1, c2) {
  * @param rgb   Array [R, G, B] 
  */
 function colorLuminance(rgb) {
-    let lumi = rgb.map(function (v) {
-        v /= 255
-        return (v < 0.03928) ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+    let lumi = rgb.map(v => {
+        v /= 255;
+        return (v < 0.03928) ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
     })
-    return (lumi[0] * 0.2126) + (lumi[1] * 0.7152) + (lumi[2] * 0.0722)
+    return (lumi[0] * 0.2126) + (lumi[1] * 0.7152) + (lumi[2] * 0.0722);
 }
 
 function calcContrastRatio(lum1, lum2) {
     // lightest color over darkest
-    return (Math.max(lum1, lum2) + 0.05) / (Math.min(lum1, lum2) + 0.05)
+    return (Math.max(lum1, lum2) + 0.05) / (Math.min(lum1, lum2) + 0.05);
 }
 
 // Utils
 
 function elapsed(progress) {
     // retourne le temps écoulé en millisecondes
-    return Math.floor((progress.current - progress.start) / 44.1) //44.1 frame par milliseconde
+    return Math.floor((progress.current - progress.start) / 44.1); //44.1 frame par milliseconde
 }
 
 function totalLength(progress) {
     // retourne le temps écoulé en millisecondes
-    return Math.floor((progress.end - progress.start) / 44.1) //44.1 frame par milliseconde
+    return Math.floor((progress.end - progress.start) / 44.1); //44.1 frame par milliseconde
 }
 
 // la fonction s'appelait map() avant, mais le nom est malheureux
 function scale(x, inMin, inMax, outMin, outMax) {
-    return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin
+    return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 }
 
 function copyObject(src) {
-    return Object.assign({}, src)
+    return Object.assign({}, src);
 }
 
 // function myHash() {
@@ -479,4 +476,10 @@ function copyObject(src) {
 function toHslString(hsl) {
     let h = Math.round(hsl.h), s = Math.round(hsl.s), l = Math.round(hsl.l);
     return `hsl(${h}, ${s}%, ${l}%)`;
+}
+
+function prepareTitle(str) {
+    // pour permettre le passage à la ligne du texte entre parenthèses dans les titres
+    const regex = /\((.*?)\)/;
+    return str.replace(regex, `<span>($1)</span>`);
 }

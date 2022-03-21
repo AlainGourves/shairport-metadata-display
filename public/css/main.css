@@ -232,6 +232,10 @@ div#title {
   color: var(--title-col);
 }
 
+div#title span{
+  display: inline-block;
+}
+
 div#album>span {
   color: hsla(0, 0%, 100%, 1);
   font-size: .65em;
