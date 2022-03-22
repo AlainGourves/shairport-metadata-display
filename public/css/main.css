@@ -1,3 +1,31 @@
+@font-face {
+  font-family: 'Vidaloka';
+  src: url('../fonts/Vidaloka-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Lato';
+  src: url('../fonts/Lato-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Lato';
+  src: url('../fonts/Lato-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Lato';
+  src: url('../fonts/Lato-LightItalic.ttf') format('truetype');
+  font-weight: 300;
+  font-style: italic;
+}
+
 *,
 *::before,
 *::after {
@@ -11,12 +39,22 @@
   --bg-initial: hsl(227, 23%, 85%);
   --title-col: hsl(216, 92%, 50%);
   --artist-col: hsl(330, 82%, 40%);
-  --text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  --text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
   --modal-alert: hsl(12, 100%, 50%);
   --modal-alert-light: hsl(12, 100%, 90%);
   --bleu: hsl(210, 80%, 50%);
   --bg-blur: '';
   --radius: .4rem;
+
+  /* @link https://utopia.fyi/type/calculator?c=320,10,1.2,1920,24,1.333,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l */
+  --step--2: clamp(0.84rem, calc(0.35rem + 0.41vw), 0.43rem);
+  --step--1: clamp(1.13rem, calc(0.40rem + 0.60vw), 0.52rem);
+  --step-0: clamp(0.63rem, calc(0.45rem + 0.88vw), 1.50rem);
+  --step-1: clamp(0.75rem, calc(0.50rem + 1.25vw), 2.00rem);
+  --step-2: clamp(0.90rem, calc(0.55rem + 1.77vw), 2.67rem);
+  --step-3: clamp(1.08rem, calc(0.59rem + 2.47vw), 3.55rem);
+  --step-4: clamp(1.30rem, calc(0.61rem + 3.44vw), 4.74rem);
+  --step-5: clamp(1.56rem, calc(0.60rem + 4.76vw), 6.31rem);
 }
 
 img {
@@ -28,9 +66,10 @@ body {
   display: grid;
   place-content: center;
   min-height: 100vh;
-  font-family: 'Muslish', 'Roboto', Helvetica, Arial, sans-serif;
+  font-family: 'Lato', 'Roboto', Helvetica, Arial, sans-serif;
   text-rendering: optimizeLegibility;
   background-size: cover;
+  background-position: 50%;
   transition: background-color .25s ease;
 }
 
@@ -49,80 +88,34 @@ body.idle {
       hsl(197deg 100% 50%) 86%,
       hsl(193deg 95% 57%) 100%);
   background-image:
-    radial-gradient(
-      rgba(0, 0, 0, 0) 50%,
+    radial-gradient(rgba(0, 0, 0, 0) 50%,
       rgba(0, 0, 0, .55)),
-    conic-gradient(
-      rgb(255, 93, 80),
-      rgb(216, 99, 150) 90deg,
-      rgb(42, 203, 249) 180deg,
-      rgb(149, 80, 252) 270deg,
-      rgb(255, 93, 80));
+    conic-gradient(hsl(3deg 99% 66%) 0deg,
+      hsl(332deg 81% 67%) 30deg,
+      hsl(272deg 49% 69%) 60deg,
+      hsl(215deg 53% 65%) 90deg,
+      hsl(214deg 69% 65%) 120deg,
+      hsl(213deg 85% 64%) 150deg,
+      hsl(210deg 100% 61%) 180deg,
+      hsl(234deg 91% 73%) 210deg,
+      hsl(272deg 70% 66%) 240deg,
+      hsl(307deg 61% 56%) 270deg,
+      hsl(328deg 88% 60%) 300deg,
+      hsl(344deg 100% 64%) 330deg,
+      hsl(3deg 99% 66%) 360deg);
   background-size: 100vmax;
 }
 
 body.playing {
   background-color: var(--bg-artwork);
   background-image: var(--bg-blur);
-  background-position: 50%;
 }
 
-/* Extra small devices */
-@media only screen and (max-width: 600px) {
-  html {
-    font-size: 8px;
-  }
-
-  .modal-dialog {
-    font-size: 1.5rem;
-  }
-}
-
-/* Medium devices */
-@media only screen and (min-width: 601px) {
-  html {
-    font-size: 10px;
-  }
-
-  .modal-dialog {
-    font-size: 1.2rem;
-  }
-}
-
-/* Large devices */
-@media only screen and (min-width: 800px) {
-  html {
-    font-size: 12px;
-  }
-
-  .modal-dialog {
-    font-size: 1rem;
-  }
-}
-
-/* Large devices */
-@media only screen and (min-width: 980px) {
-  html {
-    font-size: 14px;
-  }
-
-  .modal-dialog {
-    font-size: .85rem;
-  }
-}
 
 /* Extra large devices */
 @media only screen and (min-width: 1200px) {
-  html {
-    font-size: 18px;
-  }
-
   main {
     width: 60vw;
-  }
-
-  .modal-dialog {
-    font-size: .85rem;
   }
 }
 
@@ -217,7 +210,7 @@ div#album {
 
 div#artist,
 div#album {
-  font-size: 2.5rem;
+  font-size: var(--step-3);
   font-style: italic;
   color: var(--artist-col);
 }
@@ -227,12 +220,12 @@ div#artist {
 }
 
 div#title {
-  font-size: 3rem;
-  font-weight: 460;
+  font-size: var(--step-4);
+  font-family: 'Vidaloka', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
   color: var(--title-col);
 }
 
-div#title span{
+div#title span {
   display: inline-block;
 }
 
@@ -262,7 +255,8 @@ div#player {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.7);
   color: #fff;
-  font-size: 11px;
+  font-size: var(--step--2);
+  font-weight: 300;
   overflow: hidden;
   border-top: 1px solid hsla(0, 0%, 100%, .125);
   transition: height .5s ease-in-out;
@@ -275,7 +269,6 @@ div#player div {
 div#current,
 div#total {
   min-width: 6ch;
-  font-weight: 200;
   text-align: center;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, .75);
 }
@@ -366,6 +359,7 @@ div#elapsed {
   border-radius: .3rem;
   box-shadow: 2px 2px 6px rgba(0, 0, 0, .5);
   font-weight: 300;
+  font-size: var(--step-1);
   padding: 1rem;
 }
 
