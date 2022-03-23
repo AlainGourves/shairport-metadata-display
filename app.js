@@ -4,7 +4,6 @@ const gm = require('gm').subClass({ imageMagick: true });
 const imageColors = require('imagecolors');
 
 const Color = require('color');
-const glob = require('glob');
 const express = require('express');
 const WebSocket = require('ws');
 require('dotenv').config();
@@ -24,6 +23,7 @@ const wss = new WebSocket.Server({
 });
 
 const fs = require('fs');
+const path = require('path');
 
 const Track = require('./Track.js');
 let track = new Track();
@@ -32,8 +32,12 @@ let currentAlbum, prevAlbum;
 let buf;
 let url;
 let bgImg;
+let bestCr;
+let bestColor;
 
 const debug = true;
+// Nettoyage du cache des images de fond
+cleanUp();
 
 server.listen(port, () => {
     console.log(`listening on port: ${server.address().port}`);
@@ -170,6 +174,10 @@ function updateTrack(what, socket) {
         case 'PICTmeta':
             if (currentAlbum === prevAlbum) {
                 track.artwork = prevTrack.artwork;
+                if (!track.artwork.palette.backgroundColor && url) {
+                    console.log("Recrée la palette à partir de:", url)
+                    extractPalette(url)
+                };
             }
             data = {
                 'dimensions': {
@@ -228,9 +236,9 @@ function updateTrack(what, socket) {
     }
 }
 
-function extractPalette(path) {
+function extractPalette(thePath) {
     let bgColor, primaryColor, secondaryColor;
-    imageColors.extract(path, 5, (err, colors) => {
+    imageColors.extract(thePath, 5, (err, colors) => {
         if (err && debug) console.error('extractPalette', err)
         // Sélection des couleurs
         // Note: la fonction de calcul de luminance d'imageColors est moins complète,
@@ -242,6 +250,10 @@ function extractPalette(path) {
         bgColor = byPercent[0];
         bgColor.lumi = colorLuminance(Object.values(bgColor.rgb));
 
+        if (bgColor.lumi > 0.75) {
+            // la couleur de fond est très claire: l'année de l'album s'affiche dans la même couleur que le titre
+            track.artwork.palette.spanColorContrast = true;
+        }
         track.artwork.palette.backgroundLuminance = bgColor.lumi;
         track.artwork.palette.backgroundColor = toHslString(bgColor.hsl);
 
@@ -254,30 +266,55 @@ function extractPalette(path) {
 
         // 2) titre
         primaryColor = remainingColors[0];
-        if (debug) console.log("primary:", primaryColor.hex, toHslString(primaryColor.hsl))
+        // if (debug) console.log("primary:", primaryColor.hex, toHslString(primaryColor.hsl))
         if (primaryColor.cr < 3) {
             // réglage de la couleur
-            // if (debug) console.log("couleur:", primaryColor, "background:", bgColor)
+            // if (debug) console.log("couleur:", primaryColor, "background:", bgColor);
+            newPrimaryColor = momo(primaryColor, bgColor);
+            console.log("newPrimaryColor", newPrimaryColor)
+            track.artwork.palette.color = newPrimaryColor;
+        } else {
+            track.artwork.palette.color = toHslString(primaryColor.hsl);
         }
-        track.artwork.palette.color = toHslString(primaryColor.hsl);
 
-        // 3) artite/alabum
+        // 3) artiste/album
         secondaryColor = remainingColors[1];
-        if (debug) console.log("secondary:", secondaryColor.hex, toHslString(secondaryColor.hsl))
+        // if (debug) console.log("secondary:", secondaryColor.hex, toHslString(secondaryColor.hsl))
         if (secondaryColor.cr < 3) {
             // réglage de la couleur
             // if (debug) console.log("couleur:", secondaryColor, "background:", bgColor)
+            newSecondaryColor = momo(secondaryColor, bgColor);
+            console.log("newSecondaryColor", newSecondaryColor)
+            track.artwork.palette.alternativeColor = newSecondaryColor;
+        } else {
+            track.artwork.palette.alternativeColor = toHslString(secondaryColor.hsl);
         }
-        track.artwork.palette.alternativeColor = toHslString(secondaryColor.hsl);
 
         updateTrack('PICT')
         updateTrack('PICTmeta')
     })
 }
 
-function generateBackground(path) {
-    //  Background image
-    gm(path)
+function generateBackground(thePath) {
+
+    // Cherche l'image de fond correspondante dans ./cache
+    const cached = `${__dirname}/cache/bg_${currentAlbum}.${track.artwork.format}`;
+    try {
+        if (fs.existsSync(cached)) {
+            if (debug) console.log("Utilise le cache pour l'image de fond");
+            gm(cached).toBuffer((err, newBuffer) => {
+                if (err && debug) console.error("erreur création buffer", err);
+                bgImg = newBuffer;
+                updateTrack('bgImg');
+            })
+            return;
+        }
+    } catch (err) {
+        console.error(err);
+    }
+
+    //  Création Background image
+    gm(thePath)
         // .resize(256)
         // .blur(8, 3) 
         .toBuffer('PNG', (err, tmpBuffer) => {
@@ -288,9 +325,18 @@ function generateBackground(path) {
                 .modulate(125, 105) // % change in brightness & saturation
                 .quality(75)
                 .toBuffer((err, newBuffer) => {
+                    if (err && debug) console.error("erreur création buffer", err);
                     bgImg = newBuffer;
                     updateTrack('bgImg')
-                    if (debug) console.log('bgImg générée !')
+                    if (debug) console.log('bgImg générée !');
+                    // mise en cache de l'image de fond
+                    gm(newBuffer).write(cached, (err) => {
+                        if (err && debug) {
+                            console.error("erreur cache bg image", err);
+                            return;
+                        }
+                        if (debug) console.log("Bg image cached.")
+                    })
                 });
         });
 }
@@ -482,4 +528,106 @@ function prepareTitle(str) {
     // pour permettre le passage à la ligne du texte entre parenthèses dans les titres
     const regex = /\((.*?)\)/;
     return str.replace(regex, `<span>($1)</span>`);
+}
+
+function momo(col, bgCol) {
+    // console.log("couleur",col.score)
+    console.log("background", bgCol.score, bgCol.lumi)
+    console.log("foreground", col.score, col.lumi)
+    // la luminance varie de 0 (noir) à 1 (blanc)
+    // Si la couleur de fond est moins "sombre" que la couleur, on diminue la luminosité
+    let direction = ((bgCol.lumi - col.lumi) > 0) ? -1 : 1;
+    let increment = (3 - col.cr > 0.5) ? 10 : 1;
+
+    console.log(direction, increment)
+
+    // Fonctionne avec des objet Color
+    let myCol = Color(col.hsl);
+    bestCr = col.cr;
+    bestColor = Color(col.hsl);
+    const guess = genNewCol(myCol, direction, increment);
+    if (!guess) {
+        console.log("meilleure proposition:", bestColor.hsl().string())
+        return bestColor.hsl().string();
+    }
+    return guess;
+}
+
+function genNewCol(col, direction, increment, overshoot = false) {
+    console.log("col", col)
+    const oldCol = Color(col); // crée une copie
+    const lumBg = track.artwork.palette.backgroundLuminance;
+    if (col.hsl().lightness() > 90) increment = 1;
+    const newLightness = col.hsl().lightness() + (direction * increment);
+    if (newLightness < 0 || newLightness > 100) {
+        console.log("Dépassement")
+        return;
+    }
+    const newCol = Color({
+        h: col.hsl().hue(),
+        s: col.hsl().saturationl(),
+        l: newLightness
+    });
+    const newLumi = colorLuminance(newCol.rgb().array());
+    const newCr = calcContrastRatio(lumBg, newLumi);
+    // Mémorise le meilleur résultat trouvé
+    if (newCr > bestCr) {
+        bestCr = newCr;
+        bestColor = oldCol;
+    };
+    console.log("newLumi:", newLumi)
+    console.log("new cr:", newCr, "best:", bestCr)
+
+    if (newCr < 3 && !overshoot) {
+        // le contrast ratio n'est toujours pas bon, on continue
+        increment = (3 - newCr > 0.5) ? 10 : 1;
+        return genNewCol(newCol, direction, increment);
+    }
+
+    if (newCr < 3 && overshoot) {
+        // le contrast ratio était bon à la dernière itération
+        return oldCol.hsl().string();
+    }
+
+    if (newCr >= 3 && !overshoot) {
+        // le contrast ratio est bon mais on va essayer d'affiner en inversant la direction
+        overshoot = true;
+        direction = (direction === 1) ? -1 : 1;
+        increment = 1;
+        return genNewCol(newCol, direction, increment, overshoot);
+    }
+
+    if (newCr >= 3 && overshoot) {
+        // le contrast ratio est bon mais on continue d'essayer d'affiner
+        return genNewCol(newCol, direction, increment, overshoot);
+    }
+}
+
+function cleanUp() {
+    const base = path.join(__dirname, 'cache');
+    try {
+        fs.promises.readdir(base)
+            .then((files) => {
+                let listing = [];
+                files.forEach((f) => {
+                    if (/\.(gif|jpg|jpeg|png)$/i.test(f)) {
+                        const stats = fs.statSync(path.join(base, f))
+                        // stocke le nom et la date de création du fichier (en ms)
+                        listing = [...listing, { 'name': f, 'date': stats.birthtimeMs }]
+                    }
+                });
+                // tri sur la date, plus ancien en premier
+                let ordered = listing.sort((a, b) => a.date - b.date);
+                // Supprime les plus anciens
+                while (ordered.length > process.env.MAX_FILES_CACHED) {
+                    fs.unlink(path.join(base, ordered[0].name), (err) => {
+                        if (err) console.error(err);
+                    });
+                    ordered.shift();
+                }
+                if (debug) console.log('Cache cleaned.');
+            })
+    } catch (err) {
+        console.error(err);
+    }
 }

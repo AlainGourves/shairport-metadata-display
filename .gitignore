@@ -5,6 +5,7 @@ nodemon.json
 public/doc/*
 TODO.md
 _tmp.*
+cache/*
 
 # Dependency directories
 node_modules
