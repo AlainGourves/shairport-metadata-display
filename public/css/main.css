@@ -43,7 +43,7 @@
   --modal-alert: hsl(12, 100%, 50%);
   --modal-alert-light: hsl(12, 100%, 90%);
   --bleu: hsl(210, 80%, 50%);
-  --bg-blur: '';
+  --bg-blured: '';
   --radius: .4rem;
 
   /* @link https://utopia.fyi/type/calculator?c=320,10,1.2,1920,24,1.333,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l */
@@ -108,7 +108,7 @@ body.idle {
 
 body.playing {
   background-color: var(--bg-artwork);
-  background-image: var(--bg-blur);
+  background-image: var(--bg-blured);
 }
 
 
@@ -253,9 +253,19 @@ div#album span:after {
   content: ")";
 }
 
+#artwork img {
+  opacity: 1;
+  transition: opacity .5s linear;
+}
+
+#artwork img.fading {
+  opacity: 0;
+}
+
+
 div#player {
-  display: none;
-  height: 0;
+  height: 21px;
+  display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
@@ -265,7 +275,11 @@ div#player {
   font-weight: 300;
   overflow: hidden;
   border-top: 1px solid hsla(0, 0%, 100%, .125);
-  transition: height .5s ease-in-out;
+  transform-origin: bottom center;
+  transform: rotateX(90deg);
+  opacity: 0;
+  transition: transform .5s cubic-bezier(.38, .97, .56, .76),
+    opacity .5s linear;
 }
 
 div#player div {

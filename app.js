@@ -35,11 +35,14 @@ let bgImg;
 let bestCr;
 let bestColor;
 
-const debug = true;
+const debug = false;
+
 // Nettoyage du cache des images de fond
 cleanUp();
 
 server.listen(port, () => {
+    console.log('◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇');
+    console.log('◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆');
     console.log(`listening on port: ${server.address().port}`);
 })
 
@@ -107,12 +110,13 @@ pipeReader
         }
         currentAlbum = meta.asai; // `asai` : album ID (DAAP code)
         if (currentAlbum !== prevAlbum) bgImg = undefined
-        if (debug) console.log('albumID:', currentAlbum);
+        if (debug) console.log('albumId:', currentAlbum);
         prevTrack = track;
         track = new Track();
         track.artist = meta.asar;
         track.title = meta.minm;
         track.album = meta.asal;
+        track.albumId = meta.asai;
         track.yearAlbum = meta.asyr;
         track.duration = (meta.astm) ? meta.astm : undefined;
         updateTrack('trackInfos');
@@ -148,6 +152,7 @@ pipeReader
         track.artwork.isPresent = true;
         processPICT(buf);
     })
+    .on('stal', (err) => console.warn("Message 'stal' reçu:", err))
 
 function updateTrack(what, socket) {
     let data, src;
@@ -157,6 +162,7 @@ function updateTrack(what, socket) {
                 'artist': track.artist,
                 'title': prepareTitle(track.title),
                 'album': track.album,
+                'albumId': track.albumId,
                 'yearAlbum': track.yearAlbum,
                 'duration': track.duration
             }
@@ -175,7 +181,7 @@ function updateTrack(what, socket) {
             if (currentAlbum === prevAlbum) {
                 track.artwork = prevTrack.artwork;
                 if (!track.artwork.palette.backgroundColor && url) {
-                    console.log("Recrée la palette à partir de:", url)
+                    if (debug) console.log("Recrée la palette à partir de:", url)
                     extractPalette(url)
                 };
             }
@@ -186,8 +192,8 @@ function updateTrack(what, socket) {
                 },
                 'palette': {
                     'backgroundColor': track.artwork.palette.backgroundColor,
-                    'color': track.artwork.palette.color,
-                    'alternativeColor': track.artwork.palette.alternativeColor,
+                    'primaryColor': track.artwork.palette.primaryColor,
+                    'secondaryColor': track.artwork.palette.secondaryColor,
                     'spanColorContrast': track.artwork.palette.spanColorContrast
                 }
             }
@@ -266,28 +272,26 @@ function extractPalette(thePath) {
 
         // 2) titre
         primaryColor = remainingColors[0];
-        // if (debug) console.log("primary:", primaryColor.hex, toHslString(primaryColor.hsl))
         if (primaryColor.cr < 3) {
             // réglage de la couleur
-            // if (debug) console.log("couleur:", primaryColor, "background:", bgColor);
-            newPrimaryColor = momo(primaryColor, bgColor);
-            console.log("newPrimaryColor", newPrimaryColor)
-            track.artwork.palette.color = newPrimaryColor;
+            // if (debug) console.log("couleur:", primaryColor, "background:", bgColor, "cr:", primaryColor.cr);
+            newPrimaryColor = tuneColor(primaryColor, bgColor);
+            if (debug) console.log("New primary color:", newPrimaryColor)
+            track.artwork.palette.primaryColor = newPrimaryColor;
         } else {
-            track.artwork.palette.color = toHslString(primaryColor.hsl);
+            track.artwork.palette.primaryColor = toHslString(primaryColor.hsl);
         }
 
         // 3) artiste/album
         secondaryColor = remainingColors[1];
-        // if (debug) console.log("secondary:", secondaryColor.hex, toHslString(secondaryColor.hsl))
         if (secondaryColor.cr < 3) {
             // réglage de la couleur
-            // if (debug) console.log("couleur:", secondaryColor, "background:", bgColor)
-            newSecondaryColor = momo(secondaryColor, bgColor);
-            console.log("newSecondaryColor", newSecondaryColor)
-            track.artwork.palette.alternativeColor = newSecondaryColor;
+            // if (debug) console.log("couleur:", secondaryColor, "background:", bgColor, "cr:", secondaryColor.cr)
+            newSecondaryColor = tuneColor(secondaryColor, bgColor);
+            if (debug) console.log("New secondary color", newSecondaryColor)
+            track.artwork.palette.secondaryColor = newSecondaryColor;
         } else {
-            track.artwork.palette.alternativeColor = toHslString(secondaryColor.hsl);
+            track.artwork.palette.secondaryColor = toHslString(secondaryColor.hsl);
         }
 
         updateTrack('PICT')
@@ -315,20 +319,17 @@ function generateBackground(thePath) {
 
     //  Création Background image
     gm(thePath)
-        // .resize(256)
-        // .blur(8, 3) 
         .toBuffer('PNG', (err, tmpBuffer) => {
             if (err & debug) console.error("toBuffer", err);
             gm(tmpBuffer)
-                .resize(1024)
-                .blur(128, 4)// sur la valeur de sigma : https://stackoverflow.com/questions/23007064/effect-of-variance-sigma-at-gaussian-smoothing
+                .gaussian(16, 4)// sur la valeur de sigma : https://stackoverflow.com/questions/23007064/effect-of-variance-sigma-at-gaussian-smoothing
                 .modulate(125, 105) // % change in brightness & saturation
+                .resize(1024)
                 .quality(75)
                 .toBuffer((err, newBuffer) => {
                     if (err && debug) console.error("erreur création buffer", err);
                     bgImg = newBuffer;
                     updateTrack('bgImg')
-                    if (debug) console.log('bgImg générée !');
                     // mise en cache de l'image de fond
                     gm(newBuffer).write(cached, (err) => {
                         if (err && debug) {
@@ -353,7 +354,15 @@ async function processPICT(buf) {
                 track.artwork.dimensions.width = w;
                 track.artwork.dimensions.height = h;
                 track.artwork.format = f;
-                url = `${__dirname}/_tmp.${f}`;
+                url = `${__dirname}/cache/${currentAlbum}.${track.artwork.format}`;
+
+                // Vérifie si l'image existe en cache
+                if (fs.existsSync(url)) {
+                    if (debug) console.log("Utilise le cache pour la pochette.");
+                    extractPalette(url);
+                    generateBackground(url);
+                    return;
+                }
 
                 // Si width > 512px, on réduit l'image pour accélérer le processus
                 if (w > 512) {
@@ -374,7 +383,7 @@ async function processPICT(buf) {
                 }
             });
         } catch (err) {
-            if (debug) console.error('err processPICT:', err)
+            console.error('err processPICT:', err)
         }
     } else {
         updateTrack('bgImg');
@@ -383,98 +392,82 @@ async function processPICT(buf) {
     }
 }
 
-/*
- *  Modifie la luminosité de myCol pour obtenir un contrast ratio >= 3 avec bgCol
- *  @param col   Obj         Objet color
- *  @param cr    Float       contrast ratio couleur/Bg
- * 
- *  Retourne un array [H, S, L]
- */
-function tuneColor(col, cr) {
-    const originalColor = copyObject(col) // crée un clone de l'objet
-    const lumBg = track.artwork.palette.backgroundLuminance
-    let direction = 'down' // par défaut on cherche une couleur plus sombre
-    let increment = (3 - cr > 0.5) ? 10 : 1
+function tuneColor(col, bgCol) {
+    if (debug) console.log("-------------------------")
+    if (debug) console.log("background:", bgCol.hsl, "lumi:")
+    if (debug) console.log("foreground:", col.hsl, "lumi:", "contrast ratio:", col.cr)
 
-    if (lumBg < 0.25) {
-        // lumBg < 0.25 : la couleur de fond est sombre (0 = noir)
-        let arr = getNewContrastRatio(col, direction, increment)
-        let colorDown = Color.hsl(arr)
-        // distance entre couleur d'origine et couleur trouvée : 
-        let distanceDown = colorDistance(originalColor.color, colorDown.rgb().array())
-        arr = getNewContrastRatio(col, 'up', increment)
-        let colorUp = Color.hsl(arr)
-        let distanceUp = colorDistance(originalColor.color, colorUp.rgb().array())
-        if (distanceUp < distanceDown) {
-            // on essaye d'éviter de mettre du noir (L = 0)
-            if (colorUp.color[2] !== 0) {
-                return colorUp.color
-            } else {
-                return colorDown.color
-            }
-        } else {
-            if (colorDown.color[2] !== 0) {
-                return colorDown.color
-            } else {
-                return colorUp.color
-            }
+    // Dérivée de la courbe : on calcule la pente de la courbe du contrast ratio par rapport à la luminosité de la couleur de premier plan pour voir si elle est croissante ou décroissante et ainsi déterminer la direction
+    const c1 = Color({ h: col.hsl.h, s: col.hsl.s, l: Number(col.hsl.l) + 1 });
+    const c1CR = calcContrastRatio(bgCol.lumi, colorLuminance(c1.rgb().array()));
+    const c2 = Color({ h: col.hsl.h, s: col.hsl.s, l: Number(col.hsl.l) - 1 });
+    const c2CR = calcContrastRatio(bgCol.lumi, colorLuminance(c2.rgb().array()));
+    const coeff = (c1CR - c2CR) / 2;
+    let direction = (coeff < 0) ? -1 : 1;
+    let increment = (3 - col.cr > 0.5) ? 10 : 1;
+
+    // Fonctionne avec des objet Color https://github.com/Qix-/color/
+    let myCol = Color(col.hsl);
+    bestCr = col.cr;
+    bestColor = Color(col.hsl);
+    let guess = genNewCol(myCol, direction, increment);
+    if (!guess) {
+        // la première direction n'a pas donné de CR satisfaisant, on part dans l'autre sens
+        guess = genNewCol(myCol, (direction === 1) ? -1 : 1, 10);
+        if (!guess) {
+            // pas de résultat probant, on renvoie le meilleur trouvé
+            return bestColor.hsl().string();
         }
-    } else {
-        return getNewContrastRatio(col, direction, increment)
     }
-}
-/**
- * 
- * @param {*} col 
- * @param {*} direction 
- * @param {*} increment 
- * @param {*} overshoot 
- * 
- * Retourne un array [H, S, L]
- */
-function getNewContrastRatio(col, direction, increment, overshoot = false) {
-    let lumBg = track.artwork.palette.backgroundLuminance
-    let oldCol = copyObject(col) // crée un clone de l'objet
-    let colHSL = col.hsl().array()
-    colHSL[2] = (direction === 'up') ? colHSL[2] + increment : colHSL[2] - increment
-    let newCol = Color.hsl(colHSL)
-    if (colHSL[2] <= 0) {
-        // cas où L < 0 : on a du noir et si on va au-delà, ça provoque des erreurs
-        // on arrête là (Color a déjà limité L à 0)
-        return newCol.color
-    }
-    if (colHSL[2] > 100) {
-        // cas où L > 100 : blanc
-        return newCol.color
-    }
-    let newLumi = colorLuminance(newCol.rgb().array())
-    let newCr = calcContrastRatio(lumBg, newLumi)
-    if (newCr < 3 && !overshoot) {
-        // la valeur n'est pas encore bonne, on continue
-        increment = (3 - newCr > 0.5) ? 10 : 1
-        return getNewContrastRatio(newCol, direction, increment)
-    } else if (newCr < 3 && overshoot) {
-        // la dernière valeur était la bonne
-        return oldCol.color
-    } else if (newCr >= 3 && overshoot) {
-        return getNewContrastRatio(newCol, direction, increment, overshoot)
-    } else {
-        // newCr > 3 : on a dépassé l'objectif
-        overshoot = true
-        direction = (direction === 'up') ? 'down' : 'up'
-        increment = 1
-        return getNewContrastRatio(newCol, direction, increment, overshoot)
-    }
+    return guess;
 }
 
-/** 
- * distance euclidienne entre couleurs c1 et c2
- * @param c1    Array   [R, G, B]
- * @param c2    Array   [R, G, B]
- */
-function colorDistance(c1, c2) {
-    let r = (c1[0] + c2[0]) / 2;
-    return Math.sqrt((2 + r / 256) * (Math.pow(c2[0] - c1[0], 2)) + 4 * (Math.pow(c2[1] - c1[1], 2)) + (2 + (255 - r) / 256) * (Math.pow(c2[2] - c1[2], 2)));
+function genNewCol(col, direction, increment, overshoot = false) {
+    const oldCol = Color(col); // crée une copie
+    const lumBg = track.artwork.palette.backgroundLuminance;
+    if (col.hsl().lightness() >= 90) increment = 1;
+    const newLightness = Math.round(col.hsl().lightness() + (direction * increment));
+    if (newLightness < 0 || newLightness > 100) {
+        return false;
+    }
+    const newCol = Color({
+        h: col.hsl().hue(),
+        s: col.hsl().saturationl(),
+        l: newLightness
+    });
+    const newLumi = colorLuminance(newCol.rgb().array());
+    const newCr = calcContrastRatio(lumBg, newLumi);
+    // Mémorise le meilleur résultat trouvé
+    if (newCr > bestCr) {
+        bestCr = newCr;
+        bestColor = oldCol;
+    };
+    if (debug) console.log("new col", newCol.hsl().string())
+    if (debug) console.log("new cr:", newCr, "best:", bestCr)
+
+    if (newCr < 3 && !overshoot) {
+        // le contrast ratio n'est toujours pas bon, on continue
+        increment = (3 - newCr > 0.5) ? 10 : 1;
+        return genNewCol(newCol, direction, increment);
+    }
+
+    if (newCr < 3 && overshoot) {
+        // le contrast ratio était bon à la dernière itération
+        return oldCol.hsl().string();
+    }
+
+    if (newCr >= 3 && !overshoot) {
+        // le contrast ratio est bon mais on va essayer d'affiner en inversant la direction
+        overshoot = true;
+        direction = (direction === 1) ? -1 : 1;
+        increment = 1;
+        return genNewCol(newCol, direction, increment, overshoot);
+    }
+
+    if (newCr >= 3 && overshoot) {
+        // le contrast ratio est bon mais on continue d'essayer d'affiner
+        return genNewCol(newCol, direction, increment, overshoot);
+    }
 }
 
 /**
@@ -511,14 +504,6 @@ function scale(x, inMin, inMax, outMin, outMax) {
     return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 }
 
-function copyObject(src) {
-    return Object.assign({}, src);
-}
-
-// function myHash() {
-//     return Math.random().toString(36).substring(2, 12)
-// }
-
 function toHslString(hsl) {
     let h = Math.round(hsl.h), s = Math.round(hsl.s), l = Math.round(hsl.l);
     return `hsl(${h}, ${s}%, ${l}%)`;
@@ -529,81 +514,8 @@ function prepareTitle(str) {
     const regex = /\((.*?)\)/;
     return str.replace(regex, `<span>($1)</span>`);
 }
-
-function momo(col, bgCol) {
-    // console.log("couleur",col.score)
-    console.log("background", bgCol.score, bgCol.lumi)
-    console.log("foreground", col.score, col.lumi)
-    // la luminance varie de 0 (noir) à 1 (blanc)
-    // Si la couleur de fond est moins "sombre" que la couleur, on diminue la luminosité
-    let direction = ((bgCol.lumi - col.lumi) > 0) ? -1 : 1;
-    let increment = (3 - col.cr > 0.5) ? 10 : 1;
-
-    console.log(direction, increment)
-
-    // Fonctionne avec des objet Color
-    let myCol = Color(col.hsl);
-    bestCr = col.cr;
-    bestColor = Color(col.hsl);
-    const guess = genNewCol(myCol, direction, increment);
-    if (!guess) {
-        console.log("meilleure proposition:", bestColor.hsl().string())
-        return bestColor.hsl().string();
-    }
-    return guess;
-}
-
-function genNewCol(col, direction, increment, overshoot = false) {
-    console.log("col", col)
-    const oldCol = Color(col); // crée une copie
-    const lumBg = track.artwork.palette.backgroundLuminance;
-    if (col.hsl().lightness() > 90) increment = 1;
-    const newLightness = col.hsl().lightness() + (direction * increment);
-    if (newLightness < 0 || newLightness > 100) {
-        console.log("Dépassement")
-        return;
-    }
-    const newCol = Color({
-        h: col.hsl().hue(),
-        s: col.hsl().saturationl(),
-        l: newLightness
-    });
-    const newLumi = colorLuminance(newCol.rgb().array());
-    const newCr = calcContrastRatio(lumBg, newLumi);
-    // Mémorise le meilleur résultat trouvé
-    if (newCr > bestCr) {
-        bestCr = newCr;
-        bestColor = oldCol;
-    };
-    console.log("newLumi:", newLumi)
-    console.log("new cr:", newCr, "best:", bestCr)
-
-    if (newCr < 3 && !overshoot) {
-        // le contrast ratio n'est toujours pas bon, on continue
-        increment = (3 - newCr > 0.5) ? 10 : 1;
-        return genNewCol(newCol, direction, increment);
-    }
-
-    if (newCr < 3 && overshoot) {
-        // le contrast ratio était bon à la dernière itération
-        return oldCol.hsl().string();
-    }
-
-    if (newCr >= 3 && !overshoot) {
-        // le contrast ratio est bon mais on va essayer d'affiner en inversant la direction
-        overshoot = true;
-        direction = (direction === 1) ? -1 : 1;
-        increment = 1;
-        return genNewCol(newCol, direction, increment, overshoot);
-    }
-
-    if (newCr >= 3 && overshoot) {
-        // le contrast ratio est bon mais on continue d'essayer d'affiner
-        return genNewCol(newCol, direction, increment, overshoot);
-    }
-}
-
 function cleanUp() {
+    // Nettoyage du cache images
     const base = path.join(__dirname, 'cache');
     try {
         fs.promises.readdir(base)
@@ -618,14 +530,16 @@ function cleanUp() {
                 });
                 // tri sur la date, plus ancien en premier
                 let ordered = listing.sort((a, b) => a.date - b.date);
+                let isCleaning = false;
                 // Supprime les plus anciens
                 while (ordered.length > process.env.MAX_FILES_CACHED) {
                     fs.unlink(path.join(base, ordered[0].name), (err) => {
                         if (err) console.error(err);
+                        isCleaning = true;
                     });
                     ordered.shift();
                 }
-                if (debug) console.log('Cache cleaned.');
+                if (isCleaning && debug) console.log('Cache cleaned.');
             })
     } catch (err) {
         console.error(err);

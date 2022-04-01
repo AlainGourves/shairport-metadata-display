@@ -10,8 +10,8 @@ let myConfig = {
   },
   defaultPalette : {
     backgroundColor: 'hsl(227, 23%, 85%)',
-    color: 'hsl(216, 92%, 50%)',
-    alternativeColor: 'hsl(330, 82%, 40%)'
+    primaryColor: 'hsl(216, 92%, 50%)',
+    secondaryColor: 'hsl(330, 82%, 40%)'
   },
   strings: {
     modalMsgInfosTitle: "Info",

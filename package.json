@@ -1,6 +1,6 @@
 {
   "name": "shairport-metadata-display",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "Web app to display the metadata Shairport Sync received from iTunes or the Music app on iOS.",
   "main": "app.js",
   "author": {

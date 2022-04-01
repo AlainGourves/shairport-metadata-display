@@ -10,7 +10,8 @@ class Track {
     }
     this.album = {
       'album': '',
-      'el': document.getElementById('album')
+      'el': document.getElementById('album'),
+      'id': ''
     }
     this.yearAlbum = ''
     this.durationMs = 0
@@ -25,13 +26,13 @@ class Track {
       },
       palette: {
         backgroundColor: '',
-        color: '',
-        alternativeColor: '',
+        primaryColor: '',
+        secondaryColor: '',
         spanColorContrast: false,
         default: {
           backgroundColor: myConfig.defaultPalette.backgroundColor,
-          color: myConfig.defaultPalette.color,
-          alternativeColor: myConfig.defaultPalette.alternativeColor
+          primaryColor: myConfig.defaultPalette.primaryColor,
+          secondaryColor: myConfig.defaultPalette.secondaryColor
         }
       }
     }
@@ -40,7 +41,6 @@ class Track {
     this.runTimer = 0;
     this.timeStart = 0;
     this.player = document.querySelector('#player');
-    this.playerHeight = '21px';
     this.timerEl = player.querySelector('#current');
     this.totalEl = player.querySelector('#total');
     this.timeLine = player.querySelector('#timeLine');
@@ -69,8 +69,8 @@ class Track {
     if (this.artwork.isPresent) {
       if (window.getComputedStyle(document.documentElement).getPropertyValue("--bg-artwork") !== this.artwork.palette.backgroundColor) {
         document.documentElement.style.setProperty('--bg-artwork', this.artwork.palette.backgroundColor);
-        document.documentElement.style.setProperty('--title-col', this.artwork.palette.color);
-        document.documentElement.style.setProperty('--artist-col', this.artwork.palette.alternativeColor);
+        document.documentElement.style.setProperty('--title-col', this.artwork.palette.primaryColor);
+        document.documentElement.style.setProperty('--artist-col', this.artwork.palette.secondaryColor);
         let span = this.album.el.querySelector('span');
         if (span && this.artwork.palette.spanColorContrast) {
           span.classList.add('contrasted');
@@ -86,11 +86,15 @@ class Track {
     document.body.classList.remove('playing');
     document.body.classList.add('idle');
     document.documentElement.style.setProperty('--bg-artwork', this.artwork.palette.default.backgroundColor);
-    document.documentElement.style.setProperty('--title-col', this.artwork.palette.default.color);
-    document.documentElement.style.setProperty('--artist-col', this.artwork.palette.default.alternativeColor);
+    document.documentElement.style.setProperty('--title-col', this.artwork.palette.default.primaryColor);
+    document.documentElement.style.setProperty('--artist-col', this.artwork.palette.default.secondaryColor);
   };
 
+
   updatePICT() {
+    if (this.artwork.el.classList.contains('fading')) {
+      this.artwork.el.classList.remove('fading');
+    }
     this.artwork.el.src = this.artwork.src;
     document.body.classList.remove('idle');
     document.body.classList.add('playing');
@@ -98,11 +102,11 @@ class Track {
 
   raz() {
     this.timerPause();
-    this.player.style.height = 0;
-    this.player.style.display = 'none';
+    this.player.style.transform = 'rotateX(90deg)';
+    this.player.style.opacity = 0;
     document.body.classList.remove('playing');
     document.body.classList.add('idle');
-    document.documentElement.style.setProperty('--bg-blur', '');
+    document.documentElement.style.setProperty('--bg-blured', '');
     this.timeLine.querySelector('#elapsed').style.width = 0;
     this.removeCaret();
     this.timerEl.textContent = '';
@@ -126,8 +130,8 @@ class Track {
       this.timeStart = Date.now() - this.currPosition;
       this.runTimer = setInterval(this.ticTac.bind(this), 500);
       timers.push(this.runTimer);
-      this.player.style.display = 'flex';
-      this.player.style.height = this.playerHeight;
+      this.player.style.opacity = 1;
+      this.player.style.transform = 'rotateX(0deg)';
       this.totalEl.textContent = this.displayDuration(this.durationMs);
       this.caret.style.display = 'block';
     }
@@ -190,7 +194,7 @@ class Track {
       if (str !== '') str = `:${str}`;
       str = arr.pop().toString().padStart(2, '0') + str;
     }
-    if (str.substr(0, 1) == 0 && str.length > 3) str = str.slice(1);
+    if (str.substring(0, 1) === 0 && str.length > 3) str = str.slice(1);
     if (str.length === 2) str = `0:${str}`;
     return str;
   }

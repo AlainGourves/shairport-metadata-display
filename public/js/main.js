@@ -2,14 +2,12 @@ const url = 'ws://' + window.location.host;
 let track = new Track();
 let timers = [];
 let isModal = false;
+let timerPict; // stocke l'ID du timer pour requestPICT
 
 let socket, mainEl, modalEl, modalBtn;
 let timeout = 250; // tentatives de reconnexion de plus en plus espacées
 
-function getTheTime() {
-  let d = new Date();
-  return d.toLocaleTimeString() + ':' + d.getMilliseconds();
-}
+const debug = false;
 
 window.addEventListener('load', (event) => {
   mainEl = document.querySelector('main');
@@ -17,7 +15,7 @@ window.addEventListener('load', (event) => {
   modalBtn = modalEl.querySelector('.modal-header .btn');
 
   socket = newWebSocket();
-});
+}, false);
 
 document.addEventListener('keyup', (event) => {
   if (event.key === 'Escape' && isModal) {
@@ -26,7 +24,7 @@ document.addEventListener('keyup', (event) => {
 }, false);
 
 function newWebSocket() {
-  console.log(getTheTime(), "Trying to connect...")
+  if (debug) console.log(getTheTime(), "Trying to connect...")
   let ws = new WebSocket(url);
 
   ws.onopen = function (event) {
@@ -36,7 +34,7 @@ function newWebSocket() {
     onClose(event);
   }
   ws.onerror = function (err) {
-    console.error(getTheTime(), 'WebSocket error: ', err.message);
+    if (debug) console.error(getTheTime(), 'WebSocket error: ', err.message);
     ws.close();
   }
   ws.onmessage = function (msg) {
@@ -46,21 +44,21 @@ function newWebSocket() {
 }
 
 function onOpen(event) {
-  console.log(getTheTime(), 'Connection opened');
+  if (debug) console.log(getTheTime(), 'Connection opened');
   timeout = 250;
 };
 
 function onClose(event) {
   if (event.wasClean) {
-    console.log(getTheTime(), `Connection closed cleanly, code=${event.code}`);
+    if (debug) console.log(getTheTime(), `Connection closed cleanly, code=${event.code}`);
     return;
   }
 
   // e.g. server process killed or network down
-  console.log(getTheTime(), `Connection died, code=${event.code}`);
+  if (debug) console.log(getTheTime(), `Connection died, code=${event.code}`);
 
   if (!navigator.onLine) {
-    console.log(getTheTime(), "You're offline !")
+    if (debug) console.log(getTheTime(), "You're offline !")
     if (!isModal) {
       displayModal('offline');
     }
@@ -70,8 +68,8 @@ function onClose(event) {
   if (!isModal && timeout > 3000) {
     displayModal('connect_error');
   }
-  console.log('Timeout: ', timeout);
-  setTimeout(function () {
+  if (debug) console.log('Timeout: ', timeout);
+  window.setTimeout(function () {
     socket = newWebSocket();
   }, Math.min(10000, timeout += timeout));
 };
@@ -82,10 +80,10 @@ function onMessage(msg) {
     closeModal();
     if (modalEl.classList.contains('modal-warning')) modalEl.classList.remove('modal-warning');
   }
-  console.log(getTheTime(), msg);
+  if (debug) console.log(getTheTime(), msg);
   switch (msg.type) {
     case 'welcome':
-      console.log(getTheTime(), "Welcome new client.");
+      if (debug) console.log(getTheTime(), "Welcome new client.");
       break;
     case 'noInfo':
       track = new Track();
@@ -97,6 +95,7 @@ function onMessage(msg) {
       break;
     case 'PICT':
       PICT(msg.data);
+      window.clearTimeout(timerPict);
       break;
     case 'noPICT':
       noPICT();
@@ -107,10 +106,10 @@ function onMessage(msg) {
     case 'trackInfos':
       trackInfos(msg.data);
       // vérifie qu'il y a une pochette
-      setTimeout(() => {
+      timerPict = window.setTimeout(() => {
         if (!track.artwork.isPresent) {
           socket.send('requestPICT');
-          console.log(getTheTime(), 'Sending Pict Request');
+          if (debug) console.log(getTheTime(), 'Sending Pict Request');
         }
       }, 5000);
       break;
@@ -129,7 +128,7 @@ function onMessage(msg) {
       track.raz();
       break;
     default:
-      console.log("You're missing something => ", msg.type);
+      if (debug) console.log("You're missing something => ", msg.type);
       break;
   }
 };
@@ -140,8 +139,8 @@ const PICTmeta = function (data) {
   track.artwork.dimensions.height = data.dimensions.height;
   if (data.palette.backgroundColor !== 'undefined') {
     track.artwork.palette.backgroundColor = data.palette.backgroundColor;
-    track.artwork.palette.color = data.palette.color;
-    track.artwork.palette.alternativeColor = data.palette.alternativeColor;
+    track.artwork.palette.primaryColor = data.palette.primaryColor;
+    track.artwork.palette.secondaryColor = data.palette.secondaryColor;
     if (data.palette.spanColorContrast) {
       track.artwork.palette.spanColorContrast = true;
     }
@@ -165,16 +164,20 @@ const noPICT = function () {
 };
 
 const bgImg = function (data) {
-  document.documentElement.style.setProperty('--bg-blur', `url(${data.src})`);
+  document.documentElement.style.setProperty('--bg-blured', `url(${data.src})`);
 };
 
 const trackInfos = function (data) {
   if (isModal) closeModal();
-  if (track !== undefined) {
+  if (track.isRunning) {
     track.timerPause();
     track.removeCaret();
   }
-  document.documentElement.style.setProperty('--bg-blur', '');
+  if(track.artwork.el.src.substring(0,4) === 'data' && track.album.id !== data.albumId) {
+    // fait disparaître la pochette précédente si l'album est différent
+    track.artwork.el.classList.add('fading');
+    document.documentElement.style.setProperty('--bg-blured', '');
+  }
   track = new Track();
   track.title.title = data.title;
   track.artist.artist = data.artist;
@@ -229,4 +232,9 @@ function closeModal() {
   modalEl.classList.remove('showModal');
   if (modalEl.classList.contains('modal-warning')) modalEl.classList.remove('modal-warning');
   isModal = false;
+}
+
+function getTheTime() {
+  let d = new Date();
+  return d.toLocaleTimeString() + ':' + d.getMilliseconds();
 }
