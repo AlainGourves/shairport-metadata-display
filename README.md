@@ -1,5 +1,7 @@
 # Shairport Sync Metadata Display
 
+![Screen capture](https://raw.githubusercontent.com/AlainGourves/shairport-metadata-display/main/screen.jpg)
+
 Displays available informations about the currently played track :
 
 - Track's title,
@@ -16,11 +18,15 @@ __*N.B.* The app only displays metadata, (for the time being) it doesn't control
 
 [Shairport-sync-reader](https://github.com/roblan/shairport-sync-reader) reads and decodes this pipe and emits events accordingly.
 
-This web app listens to the relevant events, processes them if needed and sends data to listening clients through [Socket.IO](https://socket.io). Client's side, the page catches messages to update itself.
+This web app listens to the relevant events, processes them if needed and sends data to listening clients through [WebSocket](https://github.com/websockets/ws). Client's side, the page catches messages to update itself.
 
-When present, the album's artwork is displayed. Server's side, the image is analyzed to extract a palette of dominant colors (thanks to [`sharp`](https://github.com/lovell/sharp) and [`cquant`](https://github.com/xVanTuring/cquant)). If needed for better legibility, these colors are slightly altered to maintain a good contrast ratio against the chosen background color.
+When present, the album's artwork is displayed. Server's side, the image is analyzed to extract a palette of dominant colors (thanks to [`gm`](https://github.com/aheckmann/gm) and [`imagecolors`](https://github.com/tobius/imagecolors)). If needed for better legibility, these colors are slightly altered to seek at least WCAG AA level contrast ratio against the chosen background color.
 
-The album's artwork is also processed to generate the background image of the page. (Note that depending on the size of the original image and the available horsepower, it may take several seconds to appear)
+The album's artwork is also processed to generate the background image of the page (Note that depending on the size of the original image and the available horsepower, it may take several seconds to appear).
+
+As the graphic processing of album covers can be quite intensive (especially on a  old Raspberry Pi), a cache system is set up: for each album, a copy with a maximum width of 512 pixels is saved (it is internally used to extract the color palette), a second file stores the background image.
+
+The number of cached images is fixed by the constant `MAX_FILES_CACHED` of `.env`.
 
 ## Installation
 
@@ -63,7 +69,7 @@ npm start
 
 ### `systemd` Service
 
-With a `systemd` service one can restart the server after a crash or a reboot.
+With a `systemd` service, one can restart the server after a crash or a reboot.
 
 Edit the `shairport-display.service` file to adapt the `WorkingDirectory` path to your situation. You should also have to modify the path to `npm` (it has to correspond to the value returned by the bash command `which npm`).
 
