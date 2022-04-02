@@ -1,33 +1,23 @@
 <!doctype html>
-<html class="no-js" lang="en">
-
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Shairport-sync Metadata Display</title>
-  <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <link rel="manifest" href="site.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#da532c">
   <meta name="msapplication-TileColor" content="#da532c">
-
-  <link
-    href="https://fonts.googleapis.com/css?family=Lato:100,100i,300,300i,400,400i&amp;subset=latin-ext&amp;display=optional"
-    rel="stylesheet">
-
-  <link rel="stylesheet" href="css/normalize.css">
-  <link rel="stylesheet" href="css/main.css">
-
   <meta name="theme-color" content="#fafafa">
+  <link rel="stylesheet" href="css/main.css">
 </head>
 
-<body>
+<body class="idle">
   <main>
     <div id="artwork">
-      <img src="img/iTunes.png" alt="">
+      <img src="img/iTunes.png" alt="iTunes logo">
     </div>
     <div id="infos">
       <div id="artist"></div>
@@ -47,24 +37,17 @@
     </div>
   </main>
 
-  <div id="modalCenter" class="modal">
+  <div class="modal">
     <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5></h5>
-          <button>X</button>
-        </div>
-        <div class="modal-body"></div>
+      <div class="modal-header">
+        <h3></h3><a href="#" class="btn"><span></span></a>
       </div>
+      <div class="modal-body"></div>
     </div>
   </div>
 
-  <script src="js/vendor/modernizr-3.7.1.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.dev.js"></script>
   <script src="js/config.js"></script>
   <script src="js/track.js"></script>
   <script src="js/main.js"></script>
-
 </body>
-
 </html>

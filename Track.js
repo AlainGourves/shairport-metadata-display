@@ -3,6 +3,7 @@ module.exports = class Track {
         this.title = ''
         this.artist = ''
         this.album  = ''
+        this.albumId  = ''
         this.yearAlbum = ''
         this.duration = 0
         this.currPosition = 0
@@ -17,8 +18,8 @@ module.exports = class Track {
             palette: {
                 backgroundColor: '',
                 backgroundLuminance: 0,
-                color: '',
-                alternativeColor: '',
+                primaryColor: '',
+                secondaryColor: '',
                 spanColorContrast: false
             }
         }

@@ -1,191 +1,121 @@
-/*! HTML5 Boilerplate v7.1.0 | MIT License | https://html5boilerplate.com/ */
-
-/* main.css 1.0.0 | MIT License | https://github.com/h5bp/main.css#readme */
-/*
- * What follows is the result of much research on cross-browser styling.
- * Credit left inline and big thanks to Nicolas Gallagher, Jonathan Neal,
- * Kroc Camen, and the H5BP dev community and team.
- */
-
-
-/* ==========================================================================
-   Base styles: opinionated defaults
-   ========================================================================== */
-
-html {
-  color: #222;
-  font-size: 1em;
-  line-height: 1.4;
+@font-face {
+  font-family: 'Vidaloka';
+  src: url('../fonts/Vidaloka-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }
 
-/*
- * Remove text-shadow in selection highlight:
- * https://twitter.com/miketaylr/status/12228805301
- *
- * Vendor-prefixed and regular ::selection selectors cannot be combined:
- * https://stackoverflow.com/a/16982510/7133471
- *
- * Customize the background color to match your design.
- */
-
-::-moz-selection {
-  background: #b3d4fc;
-  text-shadow: none;
+@font-face {
+  font-family: 'Lato';
+  src: url('../fonts/Lato-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }
 
-::selection {
-  background: #b3d4fc;
-  text-shadow: none;
+@font-face {
+  font-family: 'Lato';
+  src: url('../fonts/Lato-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
 }
 
-/*
- * A better looking default horizontal rule
- */
-
-hr {
-  display: block;
-  height: 1px;
-  border: 0;
-  border-top: 1px solid #ccc;
-  margin: 1em 0;
-  padding: 0;
+@font-face {
+  font-family: 'Lato';
+  src: url('../fonts/Lato-LightItalic.ttf') format('truetype');
+  font-weight: 300;
+  font-style: italic;
 }
 
-/*
- * Remove the gap between audio, canvas, iframes,
- * images, videos and the bottom of their containers:
- * https://github.com/h5bp/html5-boilerplate/issues/440
- */
-
-audio,
-canvas,
-iframe,
-img,
-svg,
-video {
-  vertical-align: middle;
-}
-
-/*
- * Remove default fieldset styles.
- */
-
-fieldset {
-  border: 0;
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
+  box-sizing: content-box;
 }
-
-/*
- * Allow only vertical resizing of textareas.
- */
-
-textarea {
-  resize: vertical;
-}
-
-/* ==========================================================================
-   Browser Upgrade Prompt
-   ========================================================================== */
-
-.browserupgrade {
-  margin: 0.2em 0;
-  background: #ccc;
-  color: #000;
-  padding: 0.2em 0;
-}
-
-
-
-
-/* ==========================================================================
-   Author's custom styles
-   ========================================================================== */
 
 :root {
-  --bg-artwork: hsla(0, 0%, 60%, 1);
-  --title-col: hsla(0, 0%, 13%, 1);
-  --artist-col: hsla(0, 0%, 100%, 1);
-  --text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.75);
-  --modal-info: hsla(211, 90%, 60%, 1);
-  --modal-alert: hsla(12, 100%, 50%, 1);
-  --modal-alert-light: hsla(12, 100%, 90%, 1);
-  --bg-blur: '';
-  --radius: .6rem;
-  --bleu: hsla(210, 80%, 50%, 1);
+  --bg-artwork: hsl(227, 23%, 85%);
+  --bg-initial: hsl(227, 23%, 85%);
+  --title-col: hsl(216, 92%, 50%);
+  --artist-col: hsl(330, 82%, 40%);
+  --text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
+  --modal-alert: hsl(12, 100%, 50%);
+  --modal-alert-light: hsl(12, 100%, 90%);
+  --bleu: hsl(210, 80%, 50%);
+  --bg-blured: '';
+  --radius: .4rem;
+
+  /* @link https://utopia.fyi/type/calculator?c=320,10,1.2,1920,24,1.333,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l */
+  --step--2: clamp(0.84rem, calc(0.35rem + 0.41vw), 0.43rem);
+  --step--1: clamp(1.13rem, calc(0.40rem + 0.60vw), 0.52rem);
+  --step-0: clamp(0.63rem, calc(0.45rem + 0.88vw), 1.50rem);
+  --step-1: clamp(0.75rem, calc(0.50rem + 1.25vw), 2.00rem);
+  --step-2: clamp(0.90rem, calc(0.55rem + 1.77vw), 2.67rem);
+  --step-3: clamp(1.08rem, calc(0.59rem + 2.47vw), 3.55rem);
+  --step-4: clamp(1.30rem, calc(0.61rem + 3.44vw), 4.74rem);
+  --step-5: clamp(1.56rem, calc(0.60rem + 4.76vw), 6.31rem);
+}
+
+img {
+  display: block;
+  width: 100%;
 }
 
 body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
+  display: grid;
+  place-content: center;
+  min-height: 100vh;
   font-family: 'Lato', 'Roboto', Helvetica, Arial, sans-serif;
-  font-size: 18px;
   text-rendering: optimizeLegibility;
-  background-color:#cacaca;
-  background-image: url();
+  background-size: cover;
+  background-position: 50%;
   transition: background-color .25s ease;
 }
 
-body.playing{
+body.idle {
+  background-image: linear-gradient(135deg,
+      hsl(4, 100%, 66%),
+      hsl(264, 97%, 65%) 50%,
+      hsl(193, 95%, 57%));
+  background-image: linear-gradient(135deg,
+      hsl(4deg 100% 66%) 0%,
+      hsl(339deg 100% 60%) 14%,
+      hsl(320deg 93% 53%) 29%,
+      hsl(289deg 75% 56%) 43%,
+      hsl(238deg 100% 71%) 57%,
+      hsl(204deg 100% 50%) 71%,
+      hsl(197deg 100% 50%) 86%,
+      hsl(193deg 95% 57%) 100%);
+  background-image:
+    radial-gradient(rgba(0, 0, 0, 0) 50%,
+      rgba(0, 0, 0, .55)),
+    conic-gradient(hsl(3deg 99% 66%) 0deg,
+      hsl(332deg 81% 67%) 30deg,
+      hsl(272deg 49% 69%) 60deg,
+      hsl(215deg 53% 65%) 90deg,
+      hsl(214deg 69% 65%) 120deg,
+      hsl(213deg 85% 64%) 150deg,
+      hsl(210deg 100% 61%) 180deg,
+      hsl(234deg 91% 73%) 210deg,
+      hsl(272deg 70% 66%) 240deg,
+      hsl(307deg 61% 56%) 270deg,
+      hsl(328deg 88% 60%) 300deg,
+      hsl(344deg 100% 64%) 330deg,
+      hsl(3deg 99% 66%) 360deg);
+  background-size: 100vmax;
+}
+
+body.playing {
   background-color: var(--bg-artwork);
-  background-image: var(--bg-blur);
-  background-size: cover;
-  background-position-y: center;
+  background-image: var(--bg-blured);
 }
 
-/* Extra small devices */
-@media only screen and (max-width: 600px) {
-  html {
-    font-size: 8px;
-  }
-  .modal-dialog {
-    font-size: 1.5rem;
-  }
-}
-
-/* Medium devices */
-@media only screen and (min-width: 601px) {
-  html {
-    font-size: 10px;
-  }
-  .modal-dialog {
-    font-size: 1.2rem;
-  }
-}
-
-/* Large devices */
-@media only screen and (min-width: 800px) {
-  html {
-    font-size: 12px;
-  }
-  .modal-dialog {
-    font-size: 1rem;
-  }
-}
-
-/* Large devices */
-@media only screen and (min-width: 980px) {
-  html {
-    font-size: 14px;
-  }
-  .modal-dialog {
-    font-size: .85rem;
-  }
-}
 
 /* Extra large devices */
 @media only screen and (min-width: 1200px) {
-  html {
-    font-size: 16px;
-  }
-
   main {
     width: 60vw;
-  }
-  .modal-dialog {
-    font-size: .85rem;
   }
 }
 
@@ -194,11 +124,17 @@ main {
   width: 75vw;
   min-width: 200px;
   line-height: 1.2;
-  box-shadow: 2px 2px .5rem rgba(0, 0, 0, 0.5);
-  background-color: hsl(0, 0%, 60%);
-  transition: background-color .25s ease, filter .5S linear;
+  background-color: var(--bg-initial);
+  transition: background-color .25s linear, filter .5s linear;
   filter: none;
   border-radius: var(--radius);
+  box-shadow:
+    .006em .006em .02em rgba(0, 0, 0, 0.008),
+    .01875em .01875em .075em rgba(0, 0, 0, 0.023),
+    .05em .05em .2em rgba(0, 0, 0, 0.046),
+    .1em .1em .42em rgba(0, 0, 0, 0.08),
+    .1875em .1875em 1em rgba(0, 0, 0, 0.132),
+    .5em .5em 2em rgba(0, 0, 0, 0.25);
 }
 
 @media (orientation: landscape) {
@@ -207,11 +143,13 @@ main {
     width: 80vw;
   }
 
-  div#artwork, div#infos {
+  div#artwork,
+  div#infos {
     width: 50%;
   }
 
-  div#artwork, div#artwork img {
+  div#artwork,
+  div#artwork img {
     border-top-left-radius: var(--radius);
     border-bottom-left-radius: var(--radius);
   }
@@ -220,9 +158,11 @@ main {
     display: flex;
     flex-direction: column;
   }
+
   #player {
     border-bottom-right-radius: var(--radius);
   }
+
   div#album {
     flex: 1;
   }
@@ -233,9 +173,14 @@ main {
     flex-direction: column;
   }
 
-  div#artwork, div#artwork img {
+  div#artwork,
+  div#artwork img {
     border-top-left-radius: var(--radius);
     border-top-right-radius: var(--radius);
+  }
+
+  div#album {
+    margin-bottom: 1rem !important;
   }
 
   #player {
@@ -253,20 +198,27 @@ main.showModal {
   filter: blur(6px)
 }
 
-div#artwork img {
-  width: 100%;
-  margin: 0 auto;
+div#infos {
+  transition: height .5s ease-in-out;
 }
 
 div#title,
 div#artist,
 div#album {
-  margin-right: .8rem;
-  margin-left: .8rem;
+  margin: 0 1rem;
   text-align: right;
   overflow-wrap: break-word;
   hyphens: auto;
+  font-weight: 300;
+  text-shadow: var(--text-shadow);
   transition: color .5s ease-in-out;
+}
+
+div#artist,
+div#album {
+  font-size: var(--step-3);
+  font-style: italic;
+  color: var(--artist-col);
 }
 
 div#artist {
@@ -274,37 +226,18 @@ div#artist {
 }
 
 div#title {
-  font-size: 2.5rem;
-  font-weight: 300;
-  text-shadow: var(--text-shadow);
-}
-
-.playing div#title {
+  font-size: var(--step-4);
+  font-family: 'Vidaloka', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
   color: var(--title-col);
 }
 
-div#artist,
-div#album {
-  font-size: 2rem;
-  font-style: italic;
-  font-weight: 300;
-  text-shadow: var(--text-shadow);
-}
-
-div#album {
-  margin-bottom: .5rem;
-}
-
-.playing div#artist,
-.playing div#album {
-  color: var(--artist-col);
+div#title span {
+  display: inline-block;
 }
 
 div#album>span {
-  font-weight: 100;
   color: hsla(0, 0%, 100%, 1);
-  font-size: .75em;
-  /* taille relative au parent, qui est le DIV */
+  font-size: .65em;
 }
 
 div#album>span.contrasted {
@@ -320,35 +253,50 @@ div#album span:after {
   content: ")";
 }
 
+#artwork img {
+  opacity: 1;
+  transition: opacity .5s linear;
+}
+
+#artwork img.fading {
+  opacity: 0;
+}
+
+
 div#player {
-  display: none;
-  height: 0;
+  height: 21px;
+  display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  background-color: hsla(0, 0%, 91%, 1);
-  color: hsla(0, 0%, 40%, 1);
-  font-size: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: var(--step--2);
+  font-weight: 300;
   overflow: hidden;
-  transition: height .5s ease-in-out;
-  border-top: 1px solid hsla(0, 0%, 100%, .75);
+  border-top: 1px solid hsla(0, 0%, 100%, .125);
+  transform-origin: bottom center;
+  transform: rotateX(90deg);
+  opacity: 0;
+  transition: transform .5s cubic-bezier(.38, .97, .56, .76),
+    opacity .5s linear;
 }
 
 div#player div {
   padding: 0 .25rem;
 }
 
-div#current {
-  text-align: right;
-}
-
+div#current,
 div#total {
-  text-align: left;
+  min-width: 6ch;
+  text-align: center;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, .75);
 }
 
-div#player div#timeLine {
-  width: 100%;
-  padding: 0;
+div#timeLine {
+  --timeline-width: 2px;
+  flex-basis: 100%;
+  padding: 0 !important;
   position: relative;
   align-self: stretch;
 }
@@ -361,49 +309,51 @@ div#timeLine svg {
   position: absolute;
   display: none;
   left: 0;
-  width: 8px;
-  height: 8px;
-  top: 6px;
+  width: calc(var(--timeline-width) * 3);
+  height: calc(var(--timeline-width) * 3);
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 100;
 }
+
 div#timeLine svg .st0 {
   fill: var(--bleu);
   stroke: none;
 }
 
-div#timeLine div#duration {
+div#duration,
+div#elapsed {
   position: absolute;
-  z-index: 0;
-  width: 100%;
-  height: 4px;
+  padding: 0 !important;
+  height: var(--timeline-width);
   left: 0;
-  top: 8px;
-  padding: 0;
-  background-color: hsla(0, 0%, 71%, 1);
-  border-radius: 4px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
-div#timeLine div#elapsed {
-  position: absolute;
+div#duration {
+  z-index: 0;
+  width: 100%;
+  background-color: #111;
+  border-radius: calc(var(--timeline-width) / 2);
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, .125) inset;
+}
+
+div#elapsed {
   z-index: 10;
   width: 0;
-  height: 4px;
-  left: 0;
-  top: 8px;
-  padding: 0;
   background: var(--bleu);
-  border-radius: 4px 0 0 4px;
+  border-radius: calc(var(--timeline-width) / 2) 0 0 calc(var(--timeline-width) / 2);
 }
 
 /* Modal dialog */
-
 .modal {
   position: fixed;
   display: none;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   z-index: 1969;
   outline: 0;
   background: rgba(0, 0, 0, .5);
@@ -412,31 +362,28 @@ div#timeLine div#elapsed {
 }
 
 .modal.showModal {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   opacity: 1;
 }
 
 .modal-dialog {
   position: relative;
-  display: flex;
-  align-items: center;
+  width: calc(100vw - 6rem);
   max-width: 35rem;
-  min-height: calc(100% - 6rem);
-  margin: 2rem auto;
-}
-
-.modal-content {
   display: flex;
   flex-direction: column;
-  width: 100%;
   background: #fff;
-  border: 2px solid var(--modal-info);
+  border: 2px solid var(--bleu);
   border-radius: .3rem;
   box-shadow: 2px 2px 6px rgba(0, 0, 0, .5);
   font-weight: 300;
+  font-size: var(--step-1);
+  padding: 1rem;
 }
 
-.modal-warning .modal-content {
+.modal-warning .modal-dialog {
   background: var(--modal-alert-light);
   color: var(--modal-alert);
   border-color: currentColor;
@@ -444,36 +391,65 @@ div#timeLine div#elapsed {
 
 .modal-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 1rem;
-  color: var(--modal-info);
+  color: var(--bleu);
 }
 
 .modal-warning .modal-header {
   color: var(--modal-alert);
 }
 
-.modal-header h5 {
-  margin: 0;
+.modal-header h3 {
   font-weight: normal;
   font-size: inherit;
 }
 
-.modal-header button {
-  background-color: transparent;
-  border: 0;
-  cursor: pointer;
-  line-height: 1;
+.modal-header .btn {
+  position: relative;
+  display: block;
+  width: 1.5em;
+  height: 1.5em;
+  text-decoration: none;
   opacity: .5;
-  text-shadow: 0 1px hsl(0, 0%, 100%);
 }
 
-.modal-header button:hover {
+.btn span::before,
+.btn span::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: .125rem;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #222;
+}
+
+.btn span::before {
+  transform: rotate(45deg);
+}
+
+.btn span::after {
+  transform: rotate(-45deg);
+}
+
+@media (max-width: 768px) {
+  .modal-header .btn::before {
+    /* extends cliquable area on mobile */
+    content: '';
+    position: absolute;
+    top: -1em;
+    right: -1em;
+    bottom: -1em;
+    left: -1em;
+  }
+}
+
+.modal-header .btn:hover {
   opacity: .75;
 }
 
 .modal-body {
-  position: relative;
-  padding: 1rem;
+  margin-top: 1.5rem;
 }
