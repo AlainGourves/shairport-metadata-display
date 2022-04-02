@@ -302,6 +302,8 @@ function extractPalette(thePath) {
 function generateBackground(thePath) {
 
     // Cherche l'image de fond correspondante dans ./cache
+    const dir = './cache';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
     const cached = `${__dirname}/cache/bg_${currentAlbum}.${track.artwork.format}`;
     try {
         if (fs.existsSync(cached)) {
