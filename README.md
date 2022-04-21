@@ -30,6 +30,8 @@ The number of cached images is fixed by the constant `MAX_FILES_CACHED` of `.env
 
 ## Installation
 
+### Shairport Sync
+
 [Shairport Sync](https://github.com/mikebrady/shairport-sync), obviously, has to be installed and it must be compiled with the `--with-metadata` option. See Shairport Sync [README](https://github.com/mikebrady/shairport-sync) and [INSTALL](https://github.com/mikebrady/shairport-sync/blob/master/INSTALL.md) for the detailed procedure.
 
 Edit the configuration file (usually `/etc/shairport-sync.conf` but the location could be modified by a build option) to enable metadata and include cover art. You just have to uncomment these lines :
@@ -66,6 +68,15 @@ or
 ```bash
 npm start
 ```
+
+### ImageMagick
+
+Graphic processing relies on [`gm`](https://github.com/aheckmann/gm) and [`imagecolors`](https://github.com/tobius/imagecolors), but for them to work [`ImageMagick`](https://imagemagick.org/) must be previously installed. So :
+
+```bash
+sudo apt install imagemagick
+```
+__Note__ : [`gm`](https://github.com/aheckmann/gm) works with either [`ImageMagick`](https://imagemagick.org/) or [`GraphicsMagick`](http://www.graphicsmagick.org/), but [`imagecolors`](https://github.com/tobius/imagecolors) only depends on [`ImageMagick`](https://imagemagick.org/).
 
 ### `systemd` Service
 
