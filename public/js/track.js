@@ -1,4 +1,5 @@
-class Track {
+import { myConfig } from "./config.js";
+export default class Track {
   constructor() {
     this.title = {
       'title': '',
@@ -37,6 +38,7 @@ class Track {
       }
     }
     this.isRunning = false;
+    this.timers = [];
     this.currPosition = 0;
     this.runTimer = 0;
     this.timeStart = 0;
@@ -129,7 +131,7 @@ class Track {
       this.isRunning = true;
       this.timeStart = Date.now() - this.currPosition;
       this.runTimer = setInterval(this.ticTac.bind(this), 500);
-      timers.push(this.runTimer);
+      this.timers.push(this.runTimer);
       this.player.style.opacity = 1;
       this.player.style.transform = 'rotateX(0deg)';
       this.totalEl.textContent = this.displayDuration(this.durationMs);
@@ -166,8 +168,8 @@ class Track {
   }
 
   removeTimers() {
-    while (timers.length > 0) {
-      window.clearInterval(timers.pop());
+    while (this.timers.length > 0) {
+      window.clearInterval(this.timers.pop());
     }
   }
 

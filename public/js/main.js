@@ -1,6 +1,9 @@
+import { myConfig } from "./config.js";
+import Track from "./track.js";
+
 const server = 'ws://' + window.location.host;
 let track = new Track();
-let timers = [];
+
 let isModal = false;
 let timerPict; // stocke l'ID du timer pour requestPICT
 
