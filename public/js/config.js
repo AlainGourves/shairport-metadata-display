@@ -3,8 +3,9 @@ let myConfig = {
     url: 'mypi.local',
     port: 3600
   },
+  defaultImageFormat: 'webp', // either 'original' or 'webp'
   defaultArtwork: {
-    src: 'img/iTunes.png',
+    src: `assets/iTunes.${(this.defaultImageFormat !== 'original') ? 'webp' : 'png'}`,
     width: 1024,
     height: 1024
   },

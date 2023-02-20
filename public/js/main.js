@@ -1,4 +1,4 @@
-const url = 'ws://' + window.location.host;
+const server = 'ws://' + window.location.host;
 let track = new Track();
 let timers = [];
 let isModal = false;
@@ -25,7 +25,7 @@ document.addEventListener('keyup', (event) => {
 
 function newWebSocket() {
   if (debug) console.log(getTheTime(), "Trying to connect...")
-  let ws = new WebSocket(url);
+  let ws = new WebSocket(server);
 
   ws.onopen = function (event) {
     onOpen(event);
@@ -150,7 +150,7 @@ const PICTmeta = function (data) {
 
 const PICT = function (data) {
   track.artwork.isPresent = true;
-  track.artwork.src = data.src;
+  track.artwork.src = data.url;
   track.updatePICT();
   track.updateColors();
 };
@@ -164,7 +164,7 @@ const noPICT = function () {
 };
 
 const bgImg = function (data) {
-  document.documentElement.style.setProperty('--bg-blured', `url(${data.src})`);
+  document.documentElement.style.setProperty('--bg-blured', `url("/${data.url}")`);
 };
 
 const trackInfos = function (data) {
@@ -173,7 +173,7 @@ const trackInfos = function (data) {
     track.timerPause();
     track.removeCaret();
   }
-  if(track.artwork.el.src.substring(0,4) === 'data' && track.album.id !== data.albumId) {
+  if(track.album.id !== data.albumId) {
     // fait disparaître la pochette précédente si l'album est différent
     track.artwork.el.classList.add('fading');
     document.documentElement.style.setProperty('--bg-blured', '');

@@ -30,12 +30,14 @@ let track = new Track();
 let prevTrack;
 let currentAlbum, prevAlbum;
 let buf;
-let url;
+let imgPath;
 let bgImg;
 let bestCr;
 let bestColor;
 
-const debug = false;
+const debug = true;
+
+const cache = '/public/img';
 
 // Nettoyage du cache des images de fond
 cleanUp();
@@ -119,6 +121,9 @@ pipeReader
         track.albumId = meta.asai;
         track.yearAlbum = meta.asyr;
         track.duration = (meta.astm) ? meta.astm : undefined;
+        if (currentAlbum === prevAlbum) {
+            track.artwork = prevTrack.artwork;
+        }
         updateTrack('trackInfos');
     })
     .on('pvol', function (pvol) {
@@ -169,20 +174,20 @@ function updateTrack(what, socket) {
             break
         case 'PICT':
             data = {
-                'src': (buf) ? `data:image/${track.artwork.format};base64,${buf.toString('base64')}` : ''
+                'url': `img/${track.albumId}.${track.artwork.format}` || ''
             }
             break
         case 'bgImg':
             data = {
-                'src': (bgImg) ? `data:image/jpeg;base64,${bgImg.toString('base64')}` : ''
+                'url': `img/bg_${track.albumId}.${track.artwork.format}` || ''
             }
             break
         case 'PICTmeta':
             if (currentAlbum === prevAlbum) {
-                track.artwork = prevTrack.artwork;
-                if (!track.artwork.palette.backgroundColor && url) {
-                    if (debug) console.log("Recrée la palette à partir de:", url)
-                    extractPalette(url)
+                if (!track.artwork.palette.backgroundColor && imgPath) {
+                    console.log("track:::", track)
+                    if (debug) console.log("Recrée la palette à partir de:", `${imgPath}.${track.artwork.format}`)
+                    extractPalette(imgPath)
                 };
             }
             data = {
@@ -243,13 +248,14 @@ function updateTrack(what, socket) {
 }
 
 function extractPalette(thePath) {
+    thePath = `${thePath}.${track.artwork.format}`;
     let bgColor, primaryColor, secondaryColor;
     imageColors.extract(thePath, 5, (err, colors) => {
         if (err && debug) console.error('extractPalette', err)
         // Sélection des couleurs
         // Note: la fonction de calcul de luminance d'imageColors est moins complète,
         // donc on va recalculer les valeurs avec
-        // https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef 
+        // https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
 
         // 1) background-color : couleur qui a le pourcentage le plus grand
         const byPercent = colors.sort((a, b) => b.percent - a.percent);
@@ -300,19 +306,14 @@ function extractPalette(thePath) {
 }
 
 function generateBackground(thePath) {
-
-    // Cherche l'image de fond correspondante dans ./cache
-    const dir = './cache';
+    // Cherche l'image de fond correspondante dans ./public/img
+    const dir = `${__dirname}${cache}`;
     if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    const cached = `${__dirname}/cache/bg_${currentAlbum}.${track.artwork.format}`;
+    const bgImgPath = `${dir}/bg_${currentAlbum}`;
     try {
-        if (fs.existsSync(cached)) {
+        if (fs.existsSync(`${bgImgPath}.${track.artwork.format}`)) {
             if (debug) console.log("Utilise le cache pour l'image de fond");
-            gm(cached).toBuffer((err, newBuffer) => {
-                if (err && debug) console.error("erreur création buffer", err);
-                bgImg = newBuffer;
-                updateTrack('bgImg');
-            })
+            updateTrack('bgImg');
             return;
         }
     } catch (err) {
@@ -330,15 +331,23 @@ function generateBackground(thePath) {
                 .quality(75)
                 .toBuffer((err, newBuffer) => {
                     if (err && debug) console.error("erreur création buffer", err);
-                    bgImg = newBuffer;
-                    updateTrack('bgImg')
                     // mise en cache de l'image de fond
-                    gm(newBuffer).write(cached, (err) => {
+                    gm(newBuffer).write(`${bgImgPath}.${track.artwork.format}`, (err) => {
                         if (err && debug) {
-                            console.error("erreur cache bg image", err);
+                            console.error(`Erreur cache bg image (${track.artwork.format}):`, err);
                             return;
                         }
-                        if (debug) console.log("Bg image cached.")
+                        if (debug) console.log(`Bg image cached (${track.artwork.format}).`)
+                        updateTrack('bgImg');
+                        //TODO: à virer !!!
+                        // Save a WebP copy
+                        gm(`${bgImgPath}.${track.artwork.format}`).write(`${bgImgPath}.webp`, (err) => {
+                            if (err && debug) {
+                                console.error("Erreur cache bg image (webp):", err);
+                                return;
+                            }
+                            if (debug) console.log("Bg image cached (WebP).")
+                        })
                     })
                 });
         });
@@ -356,13 +365,13 @@ async function processPICT(buf) {
                 track.artwork.dimensions.width = w;
                 track.artwork.dimensions.height = h;
                 track.artwork.format = f;
-                url = `${__dirname}/cache/${currentAlbum}.${track.artwork.format}`;
+                imgPath = `${__dirname}${cache}/${currentAlbum}`;
 
                 // Vérifie si l'image existe en cache
-                if (fs.existsSync(url)) {
+                if (fs.existsSync(`${imgPath}.${track.artwork.format}`)) {
                     if (debug) console.log("Utilise le cache pour la pochette.");
-                    extractPalette(url);
-                    generateBackground(url);
+                    extractPalette(imgPath);
+                    generateBackground(`${imgPath}.${track.artwork.format}`);
                     return;
                 }
 
@@ -370,18 +379,22 @@ async function processPICT(buf) {
                 if (w > 512) {
                     gm(buf).resize(512)
                         .resize(512)
-                        .write(url, (err, data) => {
+                        .write(`${imgPath}.${track.artwork.format}`, (err, data) => {
                             if (err && debug) console.error("erreur écriture", err)
-                            extractPalette(url);
-                            generateBackground(url);
+                            extractPalette(imgPath);
+                            generateBackground(`${imgPath}.${track.artwork.format}`);
                         })
                 } else {
                     gm(buf)
-                        .write(url, (err, data) => {
+                        .write(`${imgPath}.${track.artwork.format}`, (err, data) => {
                             if (err && debug) console.error("erreur écriture", err)
-                            extractPalette(url);
-                            generateBackground(url);
-                        })
+                            extractPalette(imgPath);
+                            generateBackground(`${imgPath}.${track.artwork.format}`);
+                        });
+                    // WebP copy
+                    gm(buf).write(`${imgPath}.webp`, (err, data) => {
+                        if (err && debug) console.error("erreur écriture Webp", err)
+                    });
                 }
             });
         } catch (err) {
@@ -474,7 +487,7 @@ function genNewCol(col, direction, increment, overshoot = false) {
 
 /**
  * Calcul de la luminance selon la formule du W3CCalcul luminance d'une couleur
- * @param rgb   Array [R, G, B] 
+ * @param rgb   Array [R, G, B]
  */
 function colorLuminance(rgb) {
     let lumi = rgb.map(v => {
@@ -518,13 +531,13 @@ function prepareTitle(str) {
 }
 function cleanUp() {
     // Nettoyage du cache images
-    const base = path.join(__dirname, 'cache');
+    const base = path.join(__dirname, cache);
     try {
         fs.promises.readdir(base)
             .then((files) => {
                 let listing = [];
                 files.forEach((f) => {
-                    if (/\.(gif|jpg|jpeg|png)$/i.test(f)) {
+                    if (/\.(gif|jpg|jpeg|png|webp)$/i.test(f)) {
                         const stats = fs.statSync(path.join(base, f))
                         // stocke le nom et la date de création du fichier (en ms)
                         listing = [...listing, { 'name': f, 'date': stats.birthtimeMs }]

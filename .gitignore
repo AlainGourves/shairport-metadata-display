@@ -3,6 +3,7 @@
 .jshintrc
 nodemon.json
 public/doc/*
+public/img/*
 TODO.md
 _tmp.*
 cache/*

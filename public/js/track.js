@@ -19,7 +19,7 @@ class Track {
     this.artwork = {
       isPresent: false,
       src: myConfig.defaultArtwork.src,
-      el: document.querySelector('#artwork img'),
+      el: document.querySelector('#artwork').firstElementChild,
       dimensions: {
         height: myConfig.defaultArtwork.width,
         width: myConfig.defaultArtwork.height
