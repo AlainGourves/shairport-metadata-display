@@ -1,13 +1,10 @@
-const defaultImageFormat= 'webp'; // either 'original' or 'webp'
-
 export const myConfig = {
   server: {
     url: 'mypi.local',
     port: 3600
   },
-  defaultImageFormat: defaultImageFormat,
   defaultArtwork: {
-    src: `assets/iTunes.${(defaultImageFormat !== 'original') ? 'webp' : 'png'}`,
+    src: `assets/iTunes.png`,
     width: 1024,
     height: 1024
   },

@@ -10,7 +10,8 @@ let timerPict; // stocke l'ID du timer pour requestPICT
 let socket, mainEl, modalEl, modalBtn;
 let timeout = 250; // tentatives de reconnexion de plus en plus espacées
 
-const debug = false;
+const debug = true;
+window.newWebSocket = newWebSocket;
 
 window.addEventListener('load', (event) => {
   mainEl = document.querySelector('main');
@@ -114,7 +115,7 @@ function onMessage(msg) {
           socket.send('requestPICT');
           if (debug) console.log(getTheTime(), 'Sending Pict Request');
         }
-      }, 5000);
+      }, 10000);
       break;
     case 'position':
       position(msg.data);

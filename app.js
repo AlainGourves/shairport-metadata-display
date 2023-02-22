@@ -31,12 +31,12 @@ let prevTrack;
 let currentAlbum, prevAlbum;
 let buf;
 let imgPath;
-let bgImg;
 let bestCr;
 let bestColor;
 
 const debug = true;
 
+const defaultImageFormat = process.env.IMG_FORMAT; // defined in `/.env`' => webp' or 'original'
 const cache = '/public/img';
 
 // Nettoyage du cache des images de fond
@@ -82,7 +82,7 @@ wss.on('connection', function (ws) {
     }
 
     ws.on('message', function (msg) {
-        console.log('Received: ', msg);
+        console.log(`Received: "${decodeURIComponent(msg)}", msg`);
         if (msg === 'requestPICT') {
             if (track.artwork.isPresent) {
                 updateTrack('PICT', ws);
@@ -111,7 +111,6 @@ pipeReader
             prevAlbum = currentAlbum;
         }
         currentAlbum = meta.asai; // `asai` : album ID (DAAP code)
-        if (currentAlbum !== prevAlbum) bgImg = undefined
         if (debug) console.log('albumId:', currentAlbum);
         prevTrack = track;
         track = new Track();
@@ -149,6 +148,7 @@ pipeReader
         if (debug) console.log('ev: pend');
         // fin du stream
         track = new Track();
+        currentAlbum = null;
         wss.clients.forEach(client => client.send('{"type": "stop"}'));
     })
     .on('PICT', function (PICT) {
@@ -185,8 +185,7 @@ function updateTrack(what, socket) {
         case 'PICTmeta':
             if (currentAlbum === prevAlbum) {
                 if (!track.artwork.palette.backgroundColor && imgPath) {
-                    console.log("track:::", track)
-                    if (debug) console.log("Recrée la palette à partir de:", `${imgPath}.${track.artwork.format}`)
+                    if (debug) console.log("Recrée la palette à partir de:", `${imgPath}`)
                     extractPalette(imgPath)
                 };
             }
@@ -248,7 +247,6 @@ function updateTrack(what, socket) {
 }
 
 function extractPalette(thePath) {
-    thePath = `${thePath}.${track.artwork.format}`;
     let bgColor, primaryColor, secondaryColor;
     imageColors.extract(thePath, 5, (err, colors) => {
         if (err && debug) console.error('extractPalette', err)
@@ -278,7 +276,7 @@ function extractPalette(thePath) {
 
         // 2) titre
         primaryColor = remainingColors[0];
-        if (primaryColor.cr < 3) {
+        if (primaryColor.cr && primaryColor.cr < 3) {
             // réglage de la couleur
             // if (debug) console.log("couleur:", primaryColor, "background:", bgColor, "cr:", primaryColor.cr);
             newPrimaryColor = tuneColor(primaryColor, bgColor);
@@ -289,8 +287,13 @@ function extractPalette(thePath) {
         }
 
         // 3) artiste/album
-        secondaryColor = remainingColors[1];
-        if (secondaryColor.cr < 3) {
+        if (remainingColors[1]) {
+            secondaryColor = remainingColors[1];
+        } else {
+            // Pas assez de couleurs, on utilise la même que pour le titre
+            secondaryColor = remainingColors[0];
+        }
+        if (secondaryColor.cr && secondaryColor.cr < 3) {
             // réglage de la couleur
             // if (debug) console.log("couleur:", secondaryColor, "background:", bgColor, "cr:", secondaryColor.cr)
             newSecondaryColor = tuneColor(secondaryColor, bgColor);
@@ -309,9 +312,10 @@ function generateBackground(thePath) {
     // Cherche l'image de fond correspondante dans ./public/img
     const dir = `${__dirname}${cache}`;
     if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    const bgImgPath = `${dir}/bg_${currentAlbum}`;
+    let bgImgPath = `${dir}/bg_${currentAlbum}`;
+    bgImgPath = (defaultImageFormat === 'webp') ? `${bgImgPath}.webp` : `${bgImgPath}.${track.artwork.format}`;
     try {
-        if (fs.existsSync(`${bgImgPath}.${track.artwork.format}`)) {
+        if (fs.existsSync(bgImgPath)) {
             if (debug) console.log("Utilise le cache pour l'image de fond");
             updateTrack('bgImg');
             return;
@@ -328,68 +332,59 @@ function generateBackground(thePath) {
                 .gaussian(16, 4)// sur la valeur de sigma : https://stackoverflow.com/questions/23007064/effect-of-variance-sigma-at-gaussian-smoothing
                 .modulate(125, 105) // % change in brightness & saturation
                 .resize(1024)
-                .quality(75)
+                // .quality(75)
                 .toBuffer((err, newBuffer) => {
                     if (err && debug) console.error("erreur création buffer", err);
                     // mise en cache de l'image de fond
-                    gm(newBuffer).write(`${bgImgPath}.${track.artwork.format}`, (err) => {
+                    gm(newBuffer).write(bgImgPath, (err) => {
                         if (err && debug) {
                             console.error(`Erreur cache bg image (${track.artwork.format}):`, err);
                             return;
                         }
                         if (debug) console.log(`Bg image cached (${track.artwork.format}).`)
                         updateTrack('bgImg');
-                        //TODO: à virer !!!
-                        // Save a WebP copy
-                        gm(`${bgImgPath}.${track.artwork.format}`).write(`${bgImgPath}.webp`, (err) => {
-                            if (err && debug) {
-                                console.error("Erreur cache bg image (webp):", err);
-                                return;
-                            }
-                            if (debug) console.log("Bg image cached (WebP).")
-                        })
                     })
                 });
         });
 }
 
 async function processPICT(buf) {
-    if (!bgImg || currentAlbum !== prevAlbum) {
+    if (currentAlbum !== prevAlbum) {
         try {
             gm(buf).identify((err, data) => {
                 if (err && debug) console.error("metadata size", err);
                 const w = data.size.width;
                 const h = data.size.height;
                 const f = data.format.toLowerCase();
-                if (debug) console.log('image:', w, 'x', h, `(${f})`);
+                if (debug) console.log(`image: ${w} x ${h} (${f})`);
                 track.artwork.dimensions.width = w;
                 track.artwork.dimensions.height = h;
-                track.artwork.format = f;
-                imgPath = `${__dirname}${cache}/${currentAlbum}`;
+                track.artwork.format = (defaultImageFormat === 'webp') ? 'webp' : f;
+                imgPath = `${__dirname}${cache}/${currentAlbum}.${track.artwork.format}`;
 
                 // Vérifie si l'image existe en cache
-                if (fs.existsSync(`${imgPath}.${track.artwork.format}`)) {
+                if (fs.existsSync(imgPath)) {
                     if (debug) console.log("Utilise le cache pour la pochette.");
                     extractPalette(imgPath);
-                    generateBackground(`${imgPath}.${track.artwork.format}`);
+                    generateBackground(imgPath);
                     return;
                 }
 
                 // Si width > 512px, on réduit l'image pour accélérer le processus
                 if (w > 512) {
-                    gm(buf).resize(512)
+                    gm(buf)
                         .resize(512)
-                        .write(`${imgPath}.${track.artwork.format}`, (err, data) => {
+                        .write(imgPath, (err, data) => {
                             if (err && debug) console.error("erreur écriture", err)
                             extractPalette(imgPath);
-                            generateBackground(`${imgPath}.${track.artwork.format}`);
+                            generateBackground(imgPath);
                         })
                 } else {
                     gm(buf)
-                        .write(`${imgPath}.${track.artwork.format}`, (err, data) => {
+                        .write(imgPath, (err, data) => {
                             if (err && debug) console.error("erreur écriture", err)
                             extractPalette(imgPath);
-                            generateBackground(`${imgPath}.${track.artwork.format}`);
+                            generateBackground(imgPath);
                         });
                     // WebP copy
                     gm(buf).write(`${imgPath}.webp`, (err, data) => {
