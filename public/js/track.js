@@ -19,6 +19,7 @@ export default class Track {
     this.volume = 0
     this.artwork = {
       isPresent: false,
+      is2x: true, // savoir s'il y a une image retina (true par défaut)
       src: myConfig.defaultArtwork.src,
       el: document.querySelector('#artwork').firstElementChild,
       dimensions: {
@@ -97,7 +98,14 @@ export default class Track {
     if (this.artwork.el.classList.contains('fading')) {
       this.artwork.el.classList.remove('fading');
     }
-    this.artwork.el.src = this.artwork.src;
+    if (this.artwork.is2x) {
+      const retina = this.get2xUrl(this.artwork.src);
+      this.artwork.el.srcset = `${this.artwork.src}, ${retina} 2x`;
+      this.artwork.el.src = retina;
+    }else{
+      this.artwork.el.srcset = this.artwork.src;
+      this.artwork.el.src = this.artwork.src;
+    }
     document.body.classList.remove('idle');
     document.body.classList.add('playing');
   }
@@ -203,5 +211,12 @@ export default class Track {
 
   scale(x, inMin, inMax, outMin, outMax) {
     return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+  }
+
+  get2xUrl(url) {
+    // Construit l'URL pour les images Retina
+    const found = url.match(/^(.*?)\.([a-z]+)$/);
+    if (!found) return;
+    return `${found[1]}-2x.${found[2]}`;
   }
 }

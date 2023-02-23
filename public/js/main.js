@@ -155,12 +155,14 @@ const PICTmeta = function (data) {
 const PICT = function (data) {
   track.artwork.isPresent = true;
   track.artwork.src = data.url;
+  track.artwork.is2x = data.is2x;
   track.updatePICT();
   track.updateColors();
 };
 
 const noPICT = function () {
   track.artwork.src = myConfig.defaultArtwork.src;
+  track.artwork.is2x = true;
   track.artwork.dimensions.width = myConfig.defaultArtwork.width;
   track.artwork.dimensions.height = myConfig.defaultArtwork.height;
   track.updatePICT();
@@ -177,7 +179,7 @@ const trackInfos = function (data) {
     track.timerPause();
     track.removeCaret();
   }
-  if(track.album.id !== data.albumId) {
+  if (track.album.id !== data.albumId) {
     // fait disparaître la pochette précédente si l'album est différent
     track.artwork.el.classList.add('fading');
     document.documentElement.style.setProperty('--bg-blured', '');

@@ -11,6 +11,7 @@ module.exports = class Track {
         this.artwork  = {
             isPresent: false,
             format: '',
+            is2x: true,
             dimensions: {
                 height: 0,
                 width: 0
