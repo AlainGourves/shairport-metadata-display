@@ -174,7 +174,8 @@ function updateTrack(what, socket) {
             break
         case 'PICT':
             data = {
-                'url': `img/${track.albumId}.${track.artwork.format}` || ''
+                'url': `img/${track.albumId}.${track.artwork.format}` || '',
+                is2x: true
             }
             break
         case 'bgImg':
@@ -370,26 +371,43 @@ async function processPICT(buf) {
                     return;
                 }
 
-                // Si width > 512px, on réduit l'image pour accélérer le processus
-                if (w > 512) {
+                // Si width > 1024px, crée une version 2x (1024px) et 1x (512px)
+                if (w >= 1024) {
+                    gm(buf)
+                        .resize(1024)
+                        .write(`${__dirname}${cache}/${currentAlbum}-2x.${track.artwork.format}`, (err, data) => {
+                            if (err && debug) console.error(`erreur écriture ${__dirname}${cache}/${currentAlbum}-2x.${track.artwork.format}, ${err}`)
+                            if (debug) console.log("Image cached (2x).")
+                        })
+
                     gm(buf)
                         .resize(512)
                         .write(imgPath, (err, data) => {
-                            if (err && debug) console.error("erreur écriture", err)
+                            if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
+                            if (debug) console.log("Image cached.")
                             extractPalette(imgPath);
                             generateBackground(imgPath);
                         })
                 } else {
-                    gm(buf)
-                        .write(imgPath, (err, data) => {
-                            if (err && debug) console.error("erreur écriture", err)
-                            extractPalette(imgPath);
-                            generateBackground(imgPath);
-                        });
-                    // WebP copy
-                    gm(buf).write(`${imgPath}.webp`, (err, data) => {
-                        if (err && debug) console.error("erreur écriture Webp", err)
-                    });
+                    track.artwork.is2x = false;
+                    if (w > 512) {
+                        gm(buf)
+                            .resize(512)
+                            .write(imgPath, (err, data) => {
+                                if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
+                                if (debug) console.log("Image cached.")
+                                extractPalette(imgPath);
+                                generateBackground(imgPath);
+                            })
+                    } else {
+                        gm(buf)
+                            .write(imgPath, (err, data) => {
+                                if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
+                                if (debug) console.log("Image cached.")
+                                extractPalette(imgPath);
+                                generateBackground(imgPath);
+                            });
+                    }
                 }
             });
         } catch (err) {
