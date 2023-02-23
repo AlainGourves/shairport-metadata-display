@@ -104,9 +104,6 @@ function onMessage(msg) {
     case 'noPICT':
       noPICT();
       break;
-    case 'bgImg':
-      bgImg(msg.data);
-      break;
     case 'trackInfos':
       trackInfos(msg.data);
       // vérifie qu'il y a une pochette
@@ -169,10 +166,6 @@ const noPICT = function () {
   track.updateColors();
 };
 
-const bgImg = function (data) {
-  document.documentElement.style.setProperty('--bg-blured', `url("/${data.url}")`);
-};
-
 const trackInfos = function (data) {
   if (isModal) closeModal();
   if (track.isRunning) {
@@ -182,7 +175,7 @@ const trackInfos = function (data) {
   if (track.album.id !== data.albumId) {
     // fait disparaître la pochette précédente si l'album est différent
     track.artwork.el.classList.add('fading');
-    document.documentElement.style.setProperty('--bg-blured', '');
+    document.documentElement.style.setProperty('--bg-img', '');
   }
   track = new Track();
   track.title.title = data.title;
