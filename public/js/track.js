@@ -98,14 +98,15 @@ export default class Track {
     if (this.artwork.el.classList.contains('fading')) {
       this.artwork.el.classList.remove('fading');
     }
+    const retina = this.get2xUrl(this.artwork.src);
     if (this.artwork.is2x) {
-      const retina = this.get2xUrl(this.artwork.src);
       this.artwork.el.srcset = `${this.artwork.src}, ${retina} 2x`;
       this.artwork.el.src = retina;
     }else{
       this.artwork.el.srcset = this.artwork.src;
       this.artwork.el.src = this.artwork.src;
     }
+    document.documentElement.style.setProperty('--bg-img', (this.artwork.is2x) ? `url(/${retina})` : `url(/${this.artwork.src})`);
     document.body.classList.remove('idle');
     document.body.classList.add('playing');
   }

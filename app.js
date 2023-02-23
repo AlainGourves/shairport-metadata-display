@@ -73,7 +73,6 @@ wss.on('connection', function (ws) {
         if (track.artwork.isPresent) {
             updateTrack('PICT', ws);
             updateTrack('PICTmeta', ws);
-            updateTrack('bgImg', ws);
         } else {
             updateTrack('noPICT', ws);
         }
@@ -175,12 +174,7 @@ function updateTrack(what, socket) {
         case 'PICT':
             data = {
                 'url': `img/${track.albumId}.${track.artwork.format}` || '',
-                is2x: true
-            }
-            break
-        case 'bgImg':
-            data = {
-                'url': `img/bg_${track.albumId}.${track.artwork.format}` || ''
+                'is2x': track.artwork.is2x
             }
             break
         case 'PICTmeta':
@@ -309,46 +303,6 @@ function extractPalette(thePath) {
     })
 }
 
-function generateBackground(thePath) {
-    // Cherche l'image de fond correspondante dans ./public/img
-    const dir = `${__dirname}${cache}`;
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    let bgImgPath = `${dir}/bg_${currentAlbum}`;
-    bgImgPath = (defaultImageFormat === 'webp') ? `${bgImgPath}.webp` : `${bgImgPath}.${track.artwork.format}`;
-    try {
-        if (fs.existsSync(bgImgPath)) {
-            if (debug) console.log("Utilise le cache pour l'image de fond");
-            updateTrack('bgImg');
-            return;
-        }
-    } catch (err) {
-        console.error(err);
-    }
-
-    //  Création Background image
-    gm(thePath)
-        .toBuffer('PNG', (err, tmpBuffer) => {
-            if (err & debug) console.error("toBuffer", err);
-            gm(tmpBuffer)
-                .gaussian(16, 4)// sur la valeur de sigma : https://stackoverflow.com/questions/23007064/effect-of-variance-sigma-at-gaussian-smoothing
-                .modulate(125, 105) // % change in brightness & saturation
-                .resize(1024)
-                // .quality(75)
-                .toBuffer((err, newBuffer) => {
-                    if (err && debug) console.error("erreur création buffer", err);
-                    // mise en cache de l'image de fond
-                    gm(newBuffer).write(bgImgPath, (err) => {
-                        if (err && debug) {
-                            console.error(`Erreur cache bg image (${track.artwork.format}):`, err);
-                            return;
-                        }
-                        if (debug) console.log(`Bg image cached (${track.artwork.format}).`)
-                        updateTrack('bgImg');
-                    })
-                });
-        });
-}
-
 async function processPICT(buf) {
     if (currentAlbum !== prevAlbum) {
         try {
@@ -366,8 +320,8 @@ async function processPICT(buf) {
                 // Vérifie si l'image existe en cache
                 if (fs.existsSync(imgPath)) {
                     if (debug) console.log("Utilise le cache pour la pochette.");
+                    if (w < 1024) track.artwork.is2x = false;
                     extractPalette(imgPath);
-                    generateBackground(imgPath);
                     return;
                 }
 
@@ -386,10 +340,10 @@ async function processPICT(buf) {
                             if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
                             if (debug) console.log("Image cached.")
                             extractPalette(imgPath);
-                            generateBackground(imgPath);
                         })
                 } else {
                     track.artwork.is2x = false;
+                    console.log(track)
                     if (w > 512) {
                         gm(buf)
                             .resize(512)
@@ -397,7 +351,6 @@ async function processPICT(buf) {
                                 if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
                                 if (debug) console.log("Image cached.")
                                 extractPalette(imgPath);
-                                generateBackground(imgPath);
                             })
                     } else {
                         gm(buf)
@@ -405,7 +358,6 @@ async function processPICT(buf) {
                                 if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
                                 if (debug) console.log("Image cached.")
                                 extractPalette(imgPath);
-                                generateBackground(imgPath);
                             });
                     }
                 }
@@ -414,7 +366,6 @@ async function processPICT(buf) {
             console.error('err processPICT:', err)
         }
     } else {
-        updateTrack('bgImg');
         updateTrack('PICT');
         updateTrack('PICTmeta');
     }
