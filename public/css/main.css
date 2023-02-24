@@ -137,6 +137,7 @@ main {
   transition: background-color .25s linear, filter .5s linear;
   filter: none;
   border-radius: var(--radius);
+  position: relative;
   z-index: 1;
   box-shadow:
     .006em .006em .02em rgba(0, 0, 0, 0.008),

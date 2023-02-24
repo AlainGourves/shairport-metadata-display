@@ -325,7 +325,7 @@ async function processPICT(buf) {
                     return;
                 }
 
-                // Si width > 1024px, crée une version 2x (1024px) et 1x (512px)
+                // Si width >= 1024px, crée une version 2x (1024px) et 1x (512px)
                 if (w >= 1024) {
                     gm(buf)
                         .resize(1024)

@@ -10,8 +10,8 @@ let timerPict; // stocke l'ID du timer pour requestPICT
 let socket, mainEl, modalEl, modalBtn;
 let timeout = 250; // tentatives de reconnexion de plus en plus espacées
 
-const debug = true;
-window.newWebSocket = newWebSocket;
+const debug = false;
+// window.newWebSocket = newWebSocket;
 
 window.addEventListener('load', (event) => {
   mainEl = document.querySelector('main');

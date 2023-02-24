@@ -14,19 +14,23 @@ __*N.B.* The app only displays metadata, (for the time being) it doesn't control
 
 ## How does it work ?
 
+### Principle
+
 [Shairport Sync](https://github.com/mikebrady/shairport-sync) routes the metadata broadcasted by AirPlay and those that it manages iself (eg. cover art and progress) to an XML-style format pipe.
 
 [Shairport-sync-reader](https://github.com/roblan/shairport-sync-reader) reads and decodes this pipe and emits events accordingly.
 
 This web app listens to the relevant events, processes them if needed and sends data to listening clients through [WebSocket](https://github.com/websockets/ws). Client's side, the page catches messages to update itself.
 
+### Cover Art
+
 When present, the album's artwork is displayed. Server's side, the image is analyzed to extract a palette of dominant colors (thanks to [`gm`](https://github.com/aheckmann/gm) and [`imagecolors`](https://github.com/tobius/imagecolors)). If needed for better legibility, these colors are slightly altered to seek at least WCAG AA level contrast ratio against the chosen background color.
 
-The album's artwork is also processed to generate the background image of the page (Note that depending on the size of the original image and the available horsepower, it may take several seconds to appear).
+~~The album's artwork is also processed to generate the background image of the page (Note that depending on the size of the original image and the available horsepower, it may take several seconds to appear).~~
 
-As the graphic processing of album covers can be quite intensive (especially on a  old Raspberry Pi), a cache system is set up: for each album, a copy with a maximum width of 512 pixels is saved (it is internally used to extract the color palette), a second file stores the background image.
+As the graphic processing of album covers can be quite intensive (especially on a  old Raspberry Pi), a cache system is set up: for each album, a copy with a maximum width of 512 pixels is saved (it is internally used to extract the color palette)~~, a second file stores the background image.~~
 
-The number of cached images is fixed by the constant `MAX_FILES_CACHED` of `.env`.
+The number of cached images is fixed by the constant `MAX_FILES_CACHED` defined in `/.env`.
 
 ## Installation
 
@@ -57,7 +61,7 @@ Install all the required packages with :
 npm install
 ```
 
-Finally, run 
+Finally, run
 
 ```bash
 node app.js
