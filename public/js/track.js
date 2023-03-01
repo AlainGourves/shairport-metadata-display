@@ -3,15 +3,15 @@ export default class Track {
   constructor() {
     this.title = {
       'title': '',
-      'el': document.getElementById('title')
+      'el': document.querySelector('#title')
     }
     this.artist = {
       'artist': '',
-      'el': document.getElementById('artist')
+      'el': document.querySelector('#artist')
     }
     this.album = {
       'album': '',
-      'el': document.getElementById('album'),
+      'el': document.querySelector('#album'),
       'id': ''
     }
     this.yearAlbum = ''
@@ -47,7 +47,8 @@ export default class Track {
     this.timerEl = player.querySelector('#current');
     this.totalEl = player.querySelector('#total');
     this.timeLine = player.querySelector('#timeLine');
-    this.timeLine.querySelector('#elapsed').style.width = 0;
+    this.elapsed = this.timeLine.querySelector('#elapsed');
+    this.elapsed.style.width = 0;
     this.caret = this.timeLine.querySelector('svg');
     this.caret.w = parseInt(window.getComputedStyle(this.caret).width);
   }
@@ -118,7 +119,7 @@ export default class Track {
     document.body.classList.remove('playing');
     document.body.classList.add('idle');
     document.documentElement.style.setProperty('--bg-blured', '');
-    this.timeLine.querySelector('#elapsed').style.width = 0;
+    this.elapsed.style.width = 0;
     this.removeCaret();
     this.timerEl.textContent = '';
     this.totalEl.textContent = '';
@@ -163,15 +164,15 @@ export default class Track {
       this.timerPause();
     }
     if (window.getComputedStyle(this.caret).display === 'block') {
-      let divWidth = parseFloat(window.getComputedStyle(this.timeLine).width);
+      let divWidth = this.timeLine.getBoundingClientRect().width;
       let posX = this.scale(this.currPosition, 0, this.durationMs, 0, divWidth);
       const w = this.caret.w / 2;
       if (posX - w > 0) {
         this.caret.style.left = `${posX - w}px`;
-        this.timeLine.querySelector('#elapsed').style.width = `${posX}px`;
+        this.elapsed.style.width = `${posX}px`;
       } else {
         this.caret.style.left = 0;
-        this.timeLine.querySelector('#elapsed').style.width = 0;
+        this.elapsed.style.width = 0;
       }
     }
   }

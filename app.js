@@ -44,7 +44,6 @@ cleanUp();
 
 server.listen(port, () => {
     console.log('◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇');
-    console.log('◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆');
     console.log(`listening on port: ${server.address().port}`);
 })
 
@@ -365,6 +364,9 @@ async function processPICT(buf) {
             console.error('err processPICT:', err)
         }
     } else {
+        if (!track.album.format ) {
+            track.artwork.format = (defaultImageFormat === 'webp') ? 'webp' : 'png'
+        };
         updateTrack('PICT');
         updateTrack('PICTmeta');
     }
