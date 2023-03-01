@@ -140,7 +140,7 @@ export default class Track {
       this.removeTimers();
       this.isRunning = true;
       this.timeStart = Date.now() - this.currPosition;
-      this.runTimer = setInterval(this.ticTac.bind(this), 500);
+      this.runTimer = window.requestAnimationFrame(this.ticTac.bind(this));
       this.timers.push(this.runTimer);
       this.player.style.opacity = 1;
       this.player.style.transform = 'rotateX(0deg)';
@@ -174,6 +174,7 @@ export default class Track {
         this.caret.style.left = 0;
         this.elapsed.style.width = 0;
       }
+      window.requestAnimationFrame(this.ticTac.bind(this));
     }
   }
 
