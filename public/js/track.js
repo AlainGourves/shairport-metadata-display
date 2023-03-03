@@ -55,9 +55,9 @@ export default class Track {
 
   updateTrackInfos() {
     this.artist.el.textContent = this.artist.artist;
-    this.title.el.innerHTML = this.title.title;
-    this.album.el.innerHTML = this.album.album;
-    if (this.yearAlbum !== '' && this.yearAlbum !== 0 && this.yearAlbum !== undefined) {
+    this.title.el.textContent = this.title.title;
+    this.album.el.textContent = this.album.album;
+    if (this.yearAlbum !== '' && this.yearAlbum) {
       this.album.el.innerHTML += ` <span>${this.yearAlbum}</span>`;
     }
     if (this.title.title !== '') {
@@ -114,8 +114,7 @@ export default class Track {
 
   raz() {
     this.timerPause();
-    this.player.style.transform = 'rotateX(90deg)';
-    this.player.style.opacity = 0;
+    this.player.classList.remove('visible');;
     document.body.classList.remove('playing');
     document.body.classList.add('idle');
     document.documentElement.style.setProperty('--bg-blured', '');
@@ -142,8 +141,7 @@ export default class Track {
       this.timeStart = Date.now() - this.currPosition;
       this.runTimer = window.requestAnimationFrame(this.ticTac.bind(this));
       this.timers.push(this.runTimer);
-      this.player.style.opacity = 1;
-      this.player.style.transform = 'rotateX(0deg)';
+      this.player.classList.add('visible');
       this.totalEl.textContent = this.displayDuration(this.durationMs);
       this.caret.style.display = 'block';
     }

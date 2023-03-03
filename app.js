@@ -110,7 +110,7 @@ pipeReader
         }
         currentAlbum = meta.asai; // `asai` : album ID (DAAP code)
         if (debug) console.log('albumId:', currentAlbum);
-        prevTrack = track;
+        prevTrack = structuredClone(track); // deep copy
         track = new Track();
         track.artist = meta.asar;
         track.title = meta.minm;
@@ -119,7 +119,7 @@ pipeReader
         track.yearAlbum = meta.asyr;
         track.duration = (meta.astm) ? meta.astm : undefined;
         if (currentAlbum === prevAlbum) {
-            track.artwork = prevTrack.artwork;
+            track.artwork = structuredClone(prevTrack.artwork);
         }
         updateTrack('trackInfos');
     })
@@ -340,10 +340,10 @@ async function processPICT(buf) {
                             if (debug) console.log("Image cached.")
                             extractPalette(imgPath);
                         })
-                } else {
-                    track.artwork.is2x = false;
-                    if (w > 512) {
-                        gm(buf)
+                    } else {
+                        track.artwork.is2x = false;
+                        if (w > 512) {
+                            gm(buf)
                             .resize(512)
                             .write(imgPath, (err, data) => {
                                 if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
@@ -364,7 +364,7 @@ async function processPICT(buf) {
             console.error('err processPICT:', err)
         }
     } else {
-        if (!track.album.format ) {
+        if (!track.album.format) {
             track.artwork.format = (defaultImageFormat === 'webp') ? 'webp' : 'png'
         };
         updateTrack('PICT');

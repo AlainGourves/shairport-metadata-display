@@ -181,6 +181,7 @@ const trackInfos = function (data) {
   track.title.title = data.title;
   track.artist.artist = data.artist;
   track.album.album = data.album;
+  track.album.id = data.albumId;
   track.yearAlbum = data.yearAlbum;
   track.durationMs = data.duration;
   track.updateTrackInfos();
