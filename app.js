@@ -365,20 +365,24 @@ async function processPICT(buf) {
                 newHeight = await generateImg(img1x, 512, imgPath)
                 track.artwork.dimensions.width = 512;
                 track.artwork.dimensions.height = newHeight;
+                if (debug) console.log("Image cached.")
+                extractPalette(imgPath);
             }else{
                 track.artwork.is2x = false;
                 if (width > 512) {
                     newHeight = await generateImg(img, 512, imgPath)
                     track.artwork.dimensions.width = 512;
                     track.artwork.dimensions.height = newHeight;
+                    if (debug) console.log("Image cached.")
+                    extractPalette(imgPath);
                 }else{
                     img.write(imgPath, (err, data) => {
                         if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
+                        if (debug) console.log("Image cached.")
+                        extractPalette(imgPath);
                     });
                 }
             }
-            if (debug) console.log("Image cached.")
-            extractPalette(imgPath);
         } catch (err) {
             console.error('err processPICT:', err)
         }
