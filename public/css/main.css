@@ -119,7 +119,7 @@ body.playing:after {
   background-image: var(--bg-img);
   background-size: cover;
   background-position: 50% 50%;
-  filter: brightness(1.3) contrast(1.6) blur(0.5rem);
+  filter: brightness(1.2) contrast(0.8) blur(0.5rem);
 }
 
 /* Extra large devices */
@@ -193,7 +193,7 @@ main {
   }
 
   div#album {
-    margin-bottom: 1rem !important;
+    margin-block-end: 1rem;
   }
 
   #player {
@@ -218,13 +218,14 @@ div#infos {
 div#title,
 div#artist,
 div#album {
-  margin: 0 1rem;
+  margin-inline: 1rem;
   text-align: right;
   overflow-wrap: break-word;
   hyphens: auto;
   font-weight: 300;
   text-shadow: var(--text-shadow);
-  text-wrap: balance; /* hopefully, one day, this would be implemented */
+  text-wrap: balance;
+  /* hopefully, one day, this would be implemented */
   transition: color var(--transition);
 }
 
@@ -236,7 +237,7 @@ div#album {
 }
 
 div#artist {
-  margin-top: .5rem;
+  margin-block-start: .5rem;
 }
 
 div#title {
@@ -283,6 +284,7 @@ div#player {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+  gap: .25rem;
   background-color: rgba(0, 0, 0, 0.7);
   color: #fff;
   font-size: var(--step--1);
@@ -301,10 +303,6 @@ div#player.visible {
   opacity: 1;
 }
 
-div#player div {
-  padding: 0 .25rem;
-}
-
 div#current,
 div#total {
   min-width: 6ch;
@@ -314,10 +312,8 @@ div#total {
 
 div#timeLine {
   --timeline-width: 2px;
-  flex-basis: 100%;
-  padding: 0 !important;
+  flex: 1;
   position: relative;
-  align-self: stretch;
 }
 
 div#player div#timeLine:hover {
@@ -343,7 +339,6 @@ div#timeLine svg .st0 {
 div#duration,
 div#elapsed {
   position: absolute;
-  padding: 0 !important;
   height: var(--timeline-width);
   left: 0;
   top: 50%;
@@ -471,6 +466,6 @@ div#elapsed {
 }
 
 .modal-body {
-  margin-top: 1.5rem;
+  margin-block-start: 1.5rem;
   line-height: 1.5;
 }
