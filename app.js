@@ -80,14 +80,17 @@ wss.on('connection', function (ws) {
     }
 
     ws.on('message', function (msg) {
-        console.log(`Received: "${decodeURIComponent(msg)}", msg`);
-        if (msg === 'requestPICT') {
+        console.log(`Received: "${decodeURIComponent(msg)}"`);
+        if (decodeURIComponent(msg) === 'requestPICT') {
             if (track.artwork.isPresent) {
                 updateTrack('PICT', ws);
                 updateTrack('PICTmeta', ws);
                 return;
             }
             ws.send('{"type": "noPICT"}');
+        }
+        if (decodeURIComponent(msg) === 'track') {
+            updateTrack('track', ws);
         }
     })
 
@@ -171,11 +174,12 @@ function updateTrack(what, socket) {
             }
             break
         case 'PICT':
-            data = {
-                'url': `img/${track.albumId}.${track.artwork.format}` || '',
-                'is2x': track.artwork.is2x
-            }
-            break
+                const url = `img/${track.albumId}.${track.artwork.format}`;
+                data = {
+                    'url': url,
+                    'is2x': track.artwork.is2x
+                }
+                break
         case 'PICTmeta':
             if (currentAlbum === prevAlbum) {
                 if (!track.artwork.palette.backgroundColor && imgPath) {
@@ -301,74 +305,92 @@ function extractPalette(thePath) {
         updateTrack('PICTmeta')
     })
 }
+async function getImageSize(img) {
+    return new Promise((resolve, reject) => {
+        img.size((err, size) => (err) ? reject(err) : resolve(size));
+    });
+}
+
+async function getImageFormat(img) {
+    return new Promise((resolve, reject) => {
+        img.format((err, format) => (err) ? reject(err) : resolve(format));
+    });
+}
+
+async function generateImg(data, width, destUrl) {
+    return new Promise((resolve, reject) => {
+        try {
+            data.resize(width)
+                .write(destUrl, async (err, success) => {
+                    console.log(`${width} version WEBP created`);
+                    const newSize = await getImageSize(gm(destUrl));
+                    resolve(newSize.height); // renvoie la hauteur de la nouvelle image
+                })
+        } catch (err) {
+            reject(err);
+        }
+    })
+}
 
 async function processPICT(buf) {
     if (currentAlbum !== prevAlbum) {
         try {
-            gm(buf).identify((err, data) => {
-                if (err && debug) console.error("metadata size", err);
-                const w = data.size.width;
-                const h = data.size.height;
-                const f = data.format.toLowerCase();
-                if (debug) console.log(`image: ${w} x ${h} (${f})`);
-                track.artwork.dimensions.width = w;
-                track.artwork.dimensions.height = h;
-                track.artwork.format = (defaultImageFormat === 'webp') ? 'webp' : f;
-                imgPath = `${__dirname}${cache}/${currentAlbum}.${track.artwork.format}`;
+            const img = gm(buf);
+            const format = await getImageFormat(img);
+            const {width, height} = await getImageSize(img);
+            if (debug) console.log(`image: ${width} x ${height} (${format})`);
+            track.artwork.dimensions.width = width;
+            track.artwork.dimensions.height = height;
+            track.artwork.format = (defaultImageFormat === 'webp') ? 'webp' : format.toLowerCase();
+            imgPath = `${__dirname}${cache}/${currentAlbum}.${track.artwork.format}`;
 
-                // Vérifie si l'image existe en cache
-                if (fs.existsSync(imgPath)) {
-                    if (debug) console.log("Utilise le cache pour la pochette.");
-                    if (w < 1024) track.artwork.is2x = false;
-                    extractPalette(imgPath);
-                    return;
+            // Vérifie si l'image existe en cache
+            if (fs.existsSync(imgPath)) {
+                if (debug) console.log("Utilise le cache pour la pochette.");
+                if (width < 1024) track.artwork.is2x = false;
+                // récupère les dimensions de l'image en cache
+                const size = await getImageSize(gm(imgPath));
+                track.artwork.dimensions.width = size.width;
+                track.artwork.dimensions.height = size.height;
+                extractPalette(imgPath);
+                return;
+            }
+
+            // Si width >= 1024px, crée une version 2x (1024px) et 1x (512px)
+            if (width >= 1024) {
+                let newHeight = await generateImg(img, 1024, `${__dirname}${cache}/${currentAlbum}-2x.${track.artwork.format}`);
+                if (debug) console.log("Image cached (2x).");
+                // 1x version
+                const img1x = gm(`${__dirname}${cache}/${currentAlbum}-2x.${track.artwork.format}`)
+                newHeight = await generateImg(img1x, 512, imgPath)
+                track.artwork.dimensions.width = 512;
+                track.artwork.dimensions.height = newHeight;
+            }else{
+                track.artwork.is2x = false;
+                if (width > 512) {
+                    newHeight = await generateImg(img, 512, imgPath)
+                    track.artwork.dimensions.width = 512;
+                    track.artwork.dimensions.height = newHeight;
+                }else{
+                    img.write(imgPath, (err, data) => {
+                        if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
+                    });
                 }
-
-                // Si width >= 1024px, crée une version 2x (1024px) et 1x (512px)
-                if (w >= 1024) {
-                    gm(buf)
-                        .resize(1024)
-                        .write(`${__dirname}${cache}/${currentAlbum}-2x.${track.artwork.format}`, (err, data) => {
-                            if (err && debug) console.error(`erreur écriture ${__dirname}${cache}/${currentAlbum}-2x.${track.artwork.format}, ${err}`)
-                            if (debug) console.log("Image cached (2x).")
-                        })
-
-                    gm(buf)
-                        .resize(512)
-                        .write(imgPath, (err, data) => {
-                            if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
-                            if (debug) console.log("Image cached.")
-                            extractPalette(imgPath);
-                        })
-                    } else {
-                        track.artwork.is2x = false;
-                        if (w > 512) {
-                            gm(buf)
-                            .resize(512)
-                            .write(imgPath, (err, data) => {
-                                if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
-                                if (debug) console.log("Image cached.")
-                                extractPalette(imgPath);
-                            })
-                    } else {
-                        gm(buf)
-                            .write(imgPath, (err, data) => {
-                                if (err && debug) console.error(`erreur écriture ${imgPath}, ${err}`)
-                                if (debug) console.log("Image cached.")
-                                extractPalette(imgPath);
-                            });
-                    }
-                }
-            });
+            }
+            if (debug) console.log("Image cached.")
+            extractPalette(imgPath);
         } catch (err) {
             console.error('err processPICT:', err)
         }
     } else {
-        if (!track.album.format) {
-            track.artwork.format = (defaultImageFormat === 'webp') ? 'webp' : 'png'
-        };
-        updateTrack('PICT');
-        updateTrack('PICTmeta');
+        // Vérifier que l'image existe
+        imgPath = `${__dirname}${cache}/${currentAlbum}.${track.artwork.format}`;
+        if (fs.existsSync(imgPath)) {
+            updateTrack('PICT');
+            updateTrack('PICTmeta');
+        }else{
+            updateTrack('noPICT');
+        }
     }
 }
 

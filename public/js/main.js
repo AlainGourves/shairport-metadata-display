@@ -12,6 +12,7 @@ let timeout = 250; // tentatives de reconnexion de plus en plus espacées
 
 const debug = false;
 // window.newWebSocket = newWebSocket;
+// to send a messsage from the client : ws = new window.newWebSocket; ws.send('yo!');
 
 window.addEventListener('load', (event) => {
   mainEl = document.querySelector('main');
@@ -31,20 +32,16 @@ function newWebSocket() {
   if (debug) console.log(getTheTime(), "Trying to connect...")
   let ws = new WebSocket(server);
 
-  ws.onopen = function (event) {
-    onOpen(event);
-  }
-  ws.onclose = function (event) {
-    onClose(event);
-  }
-  ws.onerror = function (err) {
-    if (debug) console.error(getTheTime(), 'WebSocket error: ', err.message);
-    ws.close();
-  }
-  ws.onmessage = function (msg) {
-    onMessage(msg)
-  }
+  ws.onopen = onOpen;
+  ws.onclose = onClose;
+  ws.onmessage = onMessage;
+  ws.onerror = onError;
   return ws;
+}
+
+function onError(event) {
+  if (debug) console.error(getTheTime(), 'WebSocket error: ', err.message);
+  ws.close();
 }
 
 function onOpen(event) {
@@ -69,7 +66,7 @@ function onClose(event) {
     return;
   }
 
-  if (!isModal && timeout > 3000) {
+  if (timeout > 3000) {
     displayModal('connect_error');
   }
   if (debug) console.log('Timeout: ', timeout);

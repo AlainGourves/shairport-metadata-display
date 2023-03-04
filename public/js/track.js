@@ -55,7 +55,7 @@ export default class Track {
 
   updateTrackInfos() {
     this.artist.el.textContent = this.artist.artist;
-    this.title.el.textContent = this.title.title;
+    this.title.el.innerHTML = this.title.title; // innerHTML important! (le titre peut contenir des <span>)
     this.album.el.textContent = this.album.album;
     if (this.yearAlbum !== '' && this.yearAlbum) {
       this.album.el.innerHTML += ` <span>${this.yearAlbum}</span>`;

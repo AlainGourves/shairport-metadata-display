@@ -45,6 +45,7 @@
   --bleu: hsl(210, 80%, 50%);
   --bg-img: '';
   --radius: .4rem;
+  --transition: .5s ease-in-out;
 
   /* @link https://utopia.fyi/type/calculator/?c=320,10,1.2,1920,18,1.333,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l&g=s,l,xl,12 */
   --step--2: clamp(0.43rem, calc(0.39rem + 0.20vw), 0.63rem);
@@ -71,7 +72,7 @@ body {
   background-size: cover;
   background-position: 50%;
   overflow: hidden;
-  transition: background-color .25s ease;
+  transition: background-color var(--transition);
 }
 
 body.idle {
@@ -211,7 +212,7 @@ main.showModal {
 }
 
 div#infos {
-  transition: height .5s ease-in-out;
+  transition: height var(--transition);
 }
 
 div#title,
@@ -223,7 +224,8 @@ div#album {
   hyphens: auto;
   font-weight: 300;
   text-shadow: var(--text-shadow);
-  transition: color .5s ease-in-out;
+  text-wrap: balance; /* hopefully, one day, this would be implemented */
+  transition: color var(--transition);
 }
 
 div#artist,
@@ -267,7 +269,7 @@ div#album span:after {
 
 #artwork img {
   opacity: 1;
-  transition: opacity .5s linear;
+  transition: opacity var(--transition);
 }
 
 #artwork img.fading {
@@ -291,7 +293,7 @@ div#player {
   transform: rotateX(90deg);
   opacity: 0;
   transition: transform .5s cubic-bezier(.38, .97, .56, .76),
-    opacity .5s linear;
+    opacity var(--transition);
 }
 
 div#player.visible {
@@ -375,7 +377,7 @@ div#elapsed {
   outline: 0;
   background: rgba(0, 0, 0, .5);
   opacity: 0;
-  transition: opacity .5s linear
+  transition: opacity var(--transition);
 }
 
 .modal.showModal {
@@ -398,6 +400,7 @@ div#elapsed {
   font-weight: 300;
   font-size: var(--step-1);
   padding: 1rem;
+  transition: background-color var(--transition), color var(--transition), border-color var(--transition);
 }
 
 .modal-warning .modal-dialog {
