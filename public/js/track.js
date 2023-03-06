@@ -39,10 +39,10 @@ export default class Track {
       }
     }
     this.isRunning = false;
-    this.timers = [];
     this.currPosition = 0;
-    this.runTimer = 0;
     this.timeStart = 0;
+    this.previousMillis = 0;
+    this.raf = 0; // stocke le requestAnimationFrame ID
     this.player = document.querySelector('#player');
     this.timerEl = player.querySelector('#current');
     this.totalEl = player.querySelector('#total');
@@ -57,7 +57,7 @@ export default class Track {
     this.artist.el.textContent = this.artist.artist;
     this.title.el.innerHTML = this.title.title; // innerHTML important! (le titre peut contenir des <span>)
     this.album.el.textContent = this.album.album;
-    if (this.yearAlbum !== '' && this.yearAlbum) {
+    if (this.yearAlbum && this.yearAlbum !== '') {
       this.album.el.innerHTML += ` <span>${this.yearAlbum}</span>`;
     }
     if (this.title.title !== '') {
@@ -103,13 +103,15 @@ export default class Track {
     if (this.artwork.is2x) {
       this.artwork.el.srcset = `${this.artwork.src}, ${retina} 2x`;
       this.artwork.el.src = retina;
-    }else{
+    } else {
       this.artwork.el.srcset = this.artwork.src;
       this.artwork.el.src = this.artwork.src;
     }
-    document.documentElement.style.setProperty('--bg-img', (this.artwork.is2x) ? `url(/${retina})` : `url(/${this.artwork.src})`);
-    document.body.classList.remove('idle');
-    document.body.classList.add('playing');
+    if (this.artwork.isPresent) {
+      document.documentElement.style.setProperty('--bg-img', (this.artwork.is2x) ? `url(/${retina})` : `url(/${this.artwork.src})`);
+      document.body.classList.remove('idle');
+      document.body.classList.add('playing');
+    }
   }
 
   raz() {
@@ -136,11 +138,9 @@ export default class Track {
 
   timerStart() {
     if (!this.isRunning) {
-      this.removeTimers();
       this.isRunning = true;
       this.timeStart = Date.now() - this.currPosition;
-      this.runTimer = window.requestAnimationFrame(this.ticTac.bind(this));
-      this.timers.push(this.runTimer);
+      this.raf = window.requestAnimationFrame(this.ticTac.bind(this));
       this.player.classList.add('visible');
       this.totalEl.textContent = this.displayDuration(this.durationMs);
       this.caret.style.display = 'block';
@@ -149,7 +149,6 @@ export default class Track {
 
   timerPause() {
     if (this.isRunning) {
-      this.removeTimers();
       this.isRunning = false;
     }
   }
@@ -157,11 +156,12 @@ export default class Track {
   ticTac() {
     if (this.currPosition < this.durationMs) {
       this.currPosition = Date.now() - this.timeStart;
-      this.timerEl.textContent = this.displayDuration(this.currPosition);
-    } else {
-      this.timerPause();
-    }
-    if (window.getComputedStyle(this.caret).display === 'block') {
+      const millis = this.currPosition % 1000; // # de millisecondes
+      if (millis - this.previousMillis < 0) {
+        // passage à une nouvelle seconde -> mise à jour de l'affichage du temps écoulé
+        this.timerEl.textContent = this.displayDuration(this.currPosition);
+      }
+      this.previousMillis = millis;
       let divWidth = this.timeLine.getBoundingClientRect().width;
       let posX = this.scale(this.currPosition, 0, this.durationMs, 0, divWidth);
       const w = this.caret.w / 2;
@@ -172,13 +172,11 @@ export default class Track {
         this.caret.style.left = 0;
         this.elapsed.style.width = 0;
       }
-      window.requestAnimationFrame(this.ticTac.bind(this));
-    }
-  }
-
-  removeTimers() {
-    while (this.timers.length > 0) {
-      window.clearInterval(this.timers.pop());
+      this.raf = window.requestAnimationFrame(this.ticTac.bind(this));
+    } else {
+      window.cancelAnimationFrame(this.raf);
+      this.timerPause();
+      return;
     }
   }
 

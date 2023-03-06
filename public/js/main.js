@@ -10,8 +10,8 @@ let timerPict; // stocke l'ID du timer pour requestPICT
 let socket, mainEl, modalEl, modalBtn;
 let timeout = 250; // tentatives de reconnexion de plus en plus espacées
 
-const debug = false;
-// window.newWebSocket = newWebSocket;
+const debug = true;
+window.newWebSocket = newWebSocket;
 // to send a messsage from the client : ws = new window.newWebSocket; ws.send('yo!');
 
 window.addEventListener('load', (event) => {
@@ -39,7 +39,7 @@ function newWebSocket() {
   return ws;
 }
 
-function onError(event) {
+function onError(err) {
   if (debug) console.error(getTheTime(), 'WebSocket error: ', err.message);
   ws.close();
 }
@@ -70,6 +70,7 @@ function onClose(event) {
     displayModal('connect_error');
   }
   if (debug) console.log('Timeout: ', timeout);
+  // essaye de se reconnecter au serveur, à intervalle de plus en plus espacés
   window.setTimeout(function () {
     socket = newWebSocket();
   }, Math.min(10000, timeout += timeout));
@@ -96,20 +97,21 @@ function onMessage(msg) {
       break;
     case 'PICT':
       PICT(msg.data);
-      window.clearTimeout(timerPict);
+      clearInterval(timerPict);
       break;
     case 'noPICT':
       noPICT();
+      clearInterval(timerPict);
       break;
     case 'trackInfos':
       trackInfos(msg.data);
       // vérifie qu'il y a une pochette
-      timerPict = window.setTimeout(() => {
+      timerPict = setInterval(() => {
         if (!track.artwork.isPresent) {
           socket.send('requestPICT');
           if (debug) console.log(getTheTime(), 'Sending Pict Request');
         }
-      }, 10000);
+      }, 6000);
       break;
     case 'position':
       position(msg.data);
