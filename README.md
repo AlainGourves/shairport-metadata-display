@@ -1,3 +1,5 @@
+⚠️ **This branch is outdated and no longer maintained** ⚠️
+
 # Shairport Sync Metadata Display
 
 Displays available informations about the currently played track :
@@ -49,7 +51,7 @@ Install all the required packages with :
 npm install
 ```
 
-Finally, run 
+Finally, run
 
 ```bash
 node app.js

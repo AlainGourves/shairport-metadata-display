@@ -4,6 +4,7 @@
 nodemon.json
 package-lock.json
 public/doc/*
+public/img/*
 TODO.md
 
 tmp_*.png
