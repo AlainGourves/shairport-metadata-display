@@ -221,6 +221,7 @@ div#album {
   margin-inline: 1rem;
   text-align: right;
   overflow-wrap: break-word;
+  -webkit-hyphens: auto;
   hyphens: auto;
   font-weight: 300;
   text-shadow: var(--text-shadow);

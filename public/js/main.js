@@ -107,7 +107,7 @@ function onMessage(msg) {
       trackInfos(msg.data);
       // vérifie qu'il y a une pochette
       timerPict = setInterval(() => {
-        if (!track.artwork.isPresent) {
+        if (track.title.title && !track.artwork.isPresent) {
           socket.send('requestPICT');
           if (debug) console.log(getTheTime(), 'Sending Pict Request');
         }
@@ -126,6 +126,7 @@ function onMessage(msg) {
       track = null;
       track = new Track();
       track.raz();
+      clearInterval(timerPict);
       break;
     default:
       if (debug) console.log("You're missing something => ", msg.type);

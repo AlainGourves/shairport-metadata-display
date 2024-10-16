@@ -51,6 +51,10 @@ export default class Track {
     this.elapsed.style.width = 0;
     this.caret = this.timeLine.querySelector('svg');
     this.caret.w = parseInt(window.getComputedStyle(this.caret).width);
+
+    this.artwork.el.addEventListener('error', (ev) => {
+      console.warn("Couille en potage avec l'image !");
+    })
   }
 
   updateTrackInfos() {

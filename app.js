@@ -83,6 +83,7 @@ wss.on('connection', function (ws) {
         console.log(`Received: "${decodeURIComponent(msg)}"`);
         if (decodeURIComponent(msg) === 'requestPICT') {
             if (track.artwork.isPresent) {
+                // TODO: vérifier que le fichier existe bien (gm n'a peut-être pas fini de traiter l'image)
                 updateTrack('PICT', ws);
                 updateTrack('PICTmeta', ws);
                 return;
