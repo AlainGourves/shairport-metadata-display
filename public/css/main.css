@@ -309,6 +309,7 @@ div#total {
   min-width: 6ch;
   text-align: center;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, .75);
+  user-select: none;
 }
 
 div#timeLine {

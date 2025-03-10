@@ -52,6 +52,8 @@ export default class Track {
     this.caret = this.timeLine.querySelector('svg');
     this.caret.w = parseInt(window.getComputedStyle(this.caret).width);
 
+    this.timerHoverId = null; // pour l'affichage du temps restant à la place du total
+
     this.artwork.el.addEventListener('error', (ev) => {
       console.warn("Couille en potage avec l'image !");
     })
@@ -120,7 +122,13 @@ export default class Track {
 
   raz() {
     this.timerPause();
-    this.player.classList.remove('visible');;
+    this.player.classList.remove('visible');
+    if (this.timerHoverId) {
+      clearInterval(this.timerHoverId);
+      TouchList.timerHoverId = null;
+    }
+    this.totalEl.removeEventListener("mouseenter", this.hoverTotal);
+    this.totalEl.removeEventListener("mouseleave", this.hoverTotal);
     document.body.classList.remove('playing');
     document.body.classList.add('idle');
     document.documentElement.style.setProperty('--bg-blured', '');
@@ -141,20 +149,26 @@ export default class Track {
   }
 
   timerStart() {
+    console.log(">>>>>> timerStart, remaining:", '-' + this.displayDuration(this.durationMs - this.currPosition));
     if (!this.isRunning) {
       this.isRunning = true;
       this.timeStart = Date.now() - this.currPosition;
       this.raf = window.requestAnimationFrame(this.ticTac.bind(this));
       this.player.classList.add('visible');
       this.totalEl.textContent = this.displayDuration(this.durationMs);
+      this.totalEl.addEventListener("mouseenter", this.hoverTotal.bind(this), false);
+      this.totalEl.addEventListener("mouseover", this.hoverTotal.bind(this), false);
+      this.totalEl.addEventListener("mouseleave", this.hoverTotal.bind(this), false);
       this.caret.style.display = 'block';
     }
   }
 
   timerPause() {
+    console.log(">>>>>> timerPause, isRunning:", this.isRunning);
     if (this.isRunning) {
       this.isRunning = false;
     }
+    window.cancelAnimationFrame(this.raf);
   }
 
   ticTac() {
@@ -181,6 +195,19 @@ export default class Track {
       window.cancelAnimationFrame(this.raf);
       this.timerPause();
       return;
+    }
+  }
+
+  hoverTotal(ev) {
+    if (ev.type === 'mouseenter') {
+      // Affichage du temps restant
+      this.timerHoverId = setInterval(() => {
+        this.totalEl.textContent = '-' + this.displayDuration(this.durationMs - this.currPosition);
+      }, 500);
+    } else if (ev.type === 'mouseleave') {
+      clearInterval(this.timerHoverId);
+      this.timerHoverId = null;
+      this.totalEl.textContent = this.displayDuration(this.durationMs);
     }
   }
 

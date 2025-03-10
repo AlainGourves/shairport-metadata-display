@@ -97,21 +97,30 @@ function onMessage(msg) {
       break;
     case 'PICT':
       PICT(msg.data);
-      clearInterval(timerPict);
+      if (timerPict) {
+        clearInterval(timerPict);
+        timerPict=null;
+      }
       break;
     case 'noPICT':
       noPICT();
-      clearInterval(timerPict);
+      if (timerPict) {
+        clearInterval(timerPict);
+        timerPict=null;
+      }
       break;
     case 'trackInfos':
       trackInfos(msg.data);
+      if (debug) console.log('>>TrackInfos incoming:', msg.data);
       // vérifie qu'il y a une pochette
-      timerPict = setInterval(() => {
-        if (track.title.title && !track.artwork.isPresent) {
-          socket.send('requestPICT');
-          if (debug) console.log(getTheTime(), 'Sending Pict Request');
-        }
-      }, 6000);
+      if (!timerPict) {
+        timerPict = setInterval(() => {
+          if (track.title.title && !track.artwork.isPresent) {
+            socket.send('requestPICT');
+            if (debug) console.log(getTheTime(), 'Sending Pict Request');
+          }
+        }, 6000);
+      }
       break;
     case 'position':
       position(msg.data);
@@ -127,6 +136,7 @@ function onMessage(msg) {
       track = new Track();
       track.raz();
       clearInterval(timerPict);
+      timerPict=null;
       break;
     default:
       if (debug) console.log("You're missing something => ", msg.type);
@@ -190,7 +200,7 @@ const trackInfos = function (data) {
 const position = function (data) {
   track.currPosition = data.currPosition;
   track.durationMs = data.duration;
-  track.timerStart();
+  !track.isRunning && track.timerStart();
 };
 
 const handleModal = function (e) {
