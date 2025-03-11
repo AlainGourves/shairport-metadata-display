@@ -44,7 +44,7 @@ const defaultImageFormat = process.env.IMG_FORMAT; // defined in `/.env`' => web
 const cache = "/public/img";
 // Verify the existence of the cache folder ans create it if needed
 try {
-	if (!fs.Stats(path.join(__dirname, cache))) {
+	if (!fs.existsSync(path.join(__dirname, cache))) {
 		fs.mkdirSync(path.join(__dirname, cache));
 	}
 } catch (err) {
