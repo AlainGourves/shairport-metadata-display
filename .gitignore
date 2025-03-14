@@ -7,6 +7,7 @@ public/img/*
 TODO.md
 _tmp.*
 cache/*
+bun.lock
 
 # Dependency directories
 node_modules
