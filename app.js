@@ -125,7 +125,9 @@ L'app IOS n'envoie pas non plus les informations dans le même ordre : un messag
 */
 pipeReader
 	.on("meta", (meta) => {
-		if (debug) console.log("\n--------------------------\nev: meta", meta);
+		// if (debug) console.log("\n--------------------------\nev: meta", meta);
+		if (debug) console.log("ev: meta");
+		if (meta.caps) console.log("--->meta.caps", meta.caps);
 		if (meta.caps && meta.caps === 2) {
 			/*
             IOS Music envoie un code `caps` dans ses `meta`. `caps` est un code DACP (Digital Audio Control Protocol) pour le "playing status"
@@ -348,7 +350,7 @@ function extractPalette(thePath) {
 			// réglage de la couleur
 			// if (debug) console.log("couleur:", primaryColor, "background:", bgColor, "cr:", primaryColor.cr);
 			newPrimaryColor = tuneColor(primaryColor, bgColor);
-			if (debug) console.log("New primary color:", newPrimaryColor);
+			// if (debug) console.log("New primary color:", newPrimaryColor);
 			track.artwork.palette.primaryColor = newPrimaryColor;
 		} else {
 			track.artwork.palette.primaryColor = toHslString(primaryColor.hsl);
@@ -365,7 +367,7 @@ function extractPalette(thePath) {
 			// réglage de la couleur
 			// if (debug) console.log("couleur:", secondaryColor, "background:", bgColor, "cr:", secondaryColor.cr)
 			newSecondaryColor = tuneColor(secondaryColor, bgColor);
-			if (debug) console.log("New secondary color", newSecondaryColor);
+			// if (debug) console.log("New secondary color", newSecondaryColor);
 			track.artwork.palette.secondaryColor = newSecondaryColor;
 		} else {
 			track.artwork.palette.secondaryColor = toHslString(secondaryColor.hsl);
