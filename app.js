@@ -132,10 +132,14 @@ pipeReader
 			/*
             IOS Music envoie un code `caps` dans ses `meta`. `caps` est un code DACP (Digital Audio Control Protocol) pour le "playing status"
             2 = stopped
-            On ignore ces messages envoyés quand un morceau est mis en pause sur l'app
+            Ces messages sont généralement précédés d'un message `prgr` (qui relance le timer)
+			=> on renvoie un msg `pause`
             */
 			if (debug)
 				console.log("Play Status code: 2 (stopped) -> Message ignored");
+			for (const client of wss.clients) {
+				client.send('{"type": "pause"}');
+			}
 			return;
 		}
 
@@ -201,7 +205,7 @@ pipeReader
 		}
 	})
 	.on("pend", () => {
-		if (debug) console.log("ev: pend");
+		if (debug) console.log("ev: pend\n----------------------------------------------");
 		// fin du stream
 		track = new Track();
 		currentAlbum = null;
@@ -495,10 +499,10 @@ async function processPICT(buf) {
 }
 
 function tuneColor(col, bgCol) {
-	if (debug) console.log("-------------------------");
-	if (debug) console.log("background:", bgCol.hsl, "lumi:");
-	if (debug)
-		console.log("foreground:", col.hsl, "lumi:", "contrast ratio:", col.cr);
+	// if (debug) console.log("-------------------------");
+	// if (debug) console.log("background:", bgCol.hsl, "lumi:");
+	// if (debug)
+		// console.log("foreground:", col.hsl, "lumi:", "contrast ratio:", col.cr);
 
 	// Dérivée de la courbe : on calcule la pente de la courbe du contrast ratio par rapport à la luminosité de la couleur de premier plan pour voir si elle est croissante ou décroissante et ainsi déterminer la direction
 	const c1 = Color({ h: col.hsl.h, s: col.hsl.s, l: Number(col.hsl.l) + 1 });

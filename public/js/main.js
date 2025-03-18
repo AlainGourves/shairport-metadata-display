@@ -11,7 +11,10 @@ let socket;
 let mainEl;
 let modalEl;
 let modalBtn;
+let totalEl;
 let timeout = 250; // tentatives de reconnexion de plus en plus espacées
+
+let timeData = null; // si un message position arrive avant que l'obj Track soit créé, les données seront stockées là (iOS peut envoyer `position` avant `trackInfos`)
 
 const debug = true;
 window.newWebSocket = newWebSocket;
@@ -24,6 +27,18 @@ window.addEventListener(
 		modalEl = document.querySelector(".modal");
 		modalBtn = modalEl.querySelector(".modal-header .btn");
 
+		totalEl = mainEl.querySelector("#total");
+		totalEl.addEventListener(
+			"pointerenter",
+			onHoverTotal,
+			false,
+		);
+		totalEl.addEventListener(
+			"pointerleave",
+			onHoverTotal,
+			false,
+		);
+
 		socket = newWebSocket();
 	},
 	false,
@@ -31,8 +46,8 @@ window.addEventListener(
 
 document.addEventListener(
 	"keyup",
-	(event) => {
-		if (event.key === "Escape" && isModal) {
+	(ev) => {
+		if (ev.key === "Escape" && isModal) {
 			closeModal();
 		}
 	},
@@ -55,23 +70,23 @@ function onError(err) {
 	ws.close();
 }
 
-function onOpen(event) {
+function onOpen(ev) {
 	if (debug) console.log(getTheTime(), "Connection opened");
 	timeout = 250;
 }
 
-function onClose(event) {
-	if (event.wasClean) {
+function onClose(ev) {
+	if (ev.wasClean) {
 		if (debug)
 			console.log(
 				getTheTime(),
-				`Connection closed cleanly, code=${event.code}`,
+				`Connection closed cleanly, code=${ev.code}`,
 			);
 		return;
 	}
 
 	// e.g. server process killed or network down
-	if (debug) console.log(getTheTime(), `Connection died, code=${event.code}`);
+	if (debug) console.log(getTheTime(), `Connection died, code=${ev.code}`);
 
 	if (!navigator.onLine) {
 		if (debug) console.log(getTheTime(), "You're offline !");
@@ -92,7 +107,7 @@ function onClose(event) {
 			socket = newWebSocket();
 			if (timeout <= maxTimeout) timeout += timeout;
 		},
-		Math.min(maxTimeout, timeout)
+		Math.min(maxTimeout, timeout),
 	);
 }
 
@@ -129,7 +144,6 @@ function onMessage(msgIn) {
 			break;
 		case "trackInfos":
 			trackInfos(msg.data);
-			if (debug) console.log(">>TrackInfos incoming:", msg.data);
 			// vérifie qu'il y a une pochette
 			if (!timerPict) {
 				timerPict = setInterval(() => {
@@ -150,6 +164,7 @@ function onMessage(msgIn) {
 			track.timerPause();
 			break;
 		case "stop":
+			if (track.raf) window.cancelAnimationFrame(track.raf);
 			track = null;
 			track = new Track();
 			track.raz();
@@ -205,6 +220,9 @@ const trackInfos = (data) => {
 		track.artwork.el.classList.add("fading");
 		document.documentElement.style.setProperty("--bg-img", "");
 	}
+	// trackinfos can be sent twice (iOS)
+	if (track.album.id=== data.albumId && track.title.title === data.title && track.artist.artist === data.artist) return;
+
 	track = new Track();
 	track.title.title = data.title;
 	track.artist.artist = data.artist;
@@ -213,17 +231,49 @@ const trackInfos = (data) => {
 	track.yearAlbum = data.yearAlbum;
 	track.durationMs = data.duration;
 	track.updateTrackInfos();
+	if (timeData) {
+		track.timeStart = timeData.start;
+		track.currPosition = timeData.currPosition;
+		track.durationMs = timeData.duration;
+		track.timerStart();
+		timeData = null;
+	}
 };
 
 const position = (data) => {
-	track.currPosition = data.currPosition;
-	track.durationMs = data.duration;
-  !track.isRunning && track.timerStart(); // if (isRunning is false)  start timer
+	if (!track.title.title) {
+		timeData = {
+			currPosition: data.currPosition,
+			duration: data.duration,
+			start: Date.now() - data.currPosition,
+		};
+	} else {
+		track.timeStart = Date.now() - data.currPosition;
+		track.currPosition = data.currPosition;
+		track.durationMs = data.duration;
+		!track.isRunning && track.timerStart(); // if (isRunning is false)  start timer
+	}
 };
 
-const handleModal = (e) => {
+const onHoverTotal = (ev) => {
+	if (track) {
+		if (ev.type === "pointerenter") {
+			// Affichage du temps restant
+			track.timerHoverId = setInterval(() => {
+				track.totalEl.textContent = `-${track.displayDuration(track.durationMs - track.currPosition)}`;
+			}, 250);
+			return;
+		}
+		// pointerleave
+		clearInterval(track.timerHoverId);
+		track.timerHoverId = null;
+		totalEl.textContent = track.displayDuration(track.durationMs);
+	}
+}
+
+const handleModal = (ev) => {
 	closeModal();
-	e.preventDefault();
+	ev.preventDefault();
 };
 
 function displayModal(msg) {

@@ -42,7 +42,7 @@ export default class Track {
 		this.currPosition = 0;
 		this.timeStart = 0;
 		this.previousMillis = 0;
-		this.raf = 0; // stocke le requestAnimationFrame ID
+		this.raf = null; // pour stocker le requestAnimationFrame ID
 		this.player = document.querySelector("#player");
 		this.timerEl = player.querySelector("#current");
 		this.totalEl = player.querySelector("#total");
@@ -150,10 +150,8 @@ export default class Track {
 		this.player.classList.remove("visible");
 		if (this.timerHoverId) {
 			clearInterval(this.timerHoverId);
-			TouchList.timerHoverId = null;
+			this.timerHoverId = null;
 		}
-		this.totalEl.removeEventListener("mouseenter", this.hoverTotal);
-		this.totalEl.removeEventListener("mouseleave", this.hoverTotal);
 		document.body.classList.remove("playing");
 		document.body.classList.add("idle");
 		document.documentElement.style.setProperty("--bg-blured", "");
@@ -180,40 +178,23 @@ export default class Track {
 		);
 		if (!this.isRunning) {
 			this.isRunning = true;
-			this.timeStart = Date.now() - this.currPosition;
 			this.raf = window.requestAnimationFrame(this.ticTac.bind(this));
 			this.player.classList.add("visible");
 			this.totalEl.textContent = this.displayDuration(this.durationMs);
-			this.totalEl.addEventListener(
-				"mouseenter",
-				this.hoverTotal.bind(this),
-				false,
-			);
-			this.totalEl.addEventListener(
-				"mouseover",
-				this.hoverTotal.bind(this),
-				false,
-			);
-			this.totalEl.addEventListener(
-				"mouseleave",
-				this.hoverTotal.bind(this),
-				false,
-			);
 			this.caret.style.display = "block";
 		}
 	}
 
 	timerPause() {
-		console.log(">>>>>> timerPause, isRunning:", this.isRunning);
-		if (this.isRunning) {
-			this.isRunning = false;
-		}
-		window.cancelAnimationFrame(this.raf);
+		console.log(">>>>>> timerPause, isRunning was", this.isRunning);
+		this.isRunning = false;
+		if (this.raf) window.cancelAnimationFrame(this.raf);
 	}
 
 	ticTac() {
 		if (this.currPosition < this.durationMs) {
 			this.currPosition = Date.now() - this.timeStart;
+			// console.log((100*this.currPosition)/this.durationMs);
 			const millis = this.currPosition % 1000; // # de millisecondes
 			if (millis - this.previousMillis < 0) {
 				// passage à une nouvelle seconde -> mise à jour de l'affichage du temps écoulé
@@ -238,22 +219,9 @@ export default class Track {
 			}
 			this.raf = window.requestAnimationFrame(this.ticTac.bind(this));
 		} else {
-			window.cancelAnimationFrame(this.raf);
+			if (this.raf) window.cancelAnimationFrame(this.raf);
 			this.timerPause();
 			return;
-		}
-	}
-
-	hoverTotal(ev) {
-		if (ev.type === "mouseenter") {
-			// Affichage du temps restant
-			this.timerHoverId = setInterval(() => {
-				this.totalEl.textContent = `-${this.displayDuration(this.durationMs - this.currPosition)}`;
-			}, 500);
-		} else if (ev.type === "mouseleave") {
-			clearInterval(this.timerHoverId);
-			this.timerHoverId = null;
-			this.totalEl.textContent = this.displayDuration(this.durationMs);
 		}
 	}
 
