@@ -47,10 +47,9 @@ export default class Track {
 		this.timerEl = player.querySelector("#current");
 		this.totalEl = player.querySelector("#total");
 		this.timeLine = player.querySelector("#timeLine");
-		this.elapsed = this.timeLine.querySelector("#elapsed");
-		this.elapsed.style.width = 0;
+		document.documentElement.style.setProperty("--progress", "0%");
+
 		this.caret = this.timeLine.querySelector("svg");
-		this.caret.w = Number.parseInt(window.getComputedStyle(this.caret).width);
 
 		this.timerHoverId = null; // pour l'affichage du temps restant à la place du total
 
@@ -155,20 +154,15 @@ export default class Track {
 		document.body.classList.remove("playing");
 		document.body.classList.add("idle");
 		document.documentElement.style.setProperty("--bg-blured", "");
-		this.elapsed.style.width = 0;
-		this.removeCaret();
+		document.documentElement.style.setProperty("--progress", "0%");
+		if (window.getComputedStyle(this.caret).display === "block") {
+			this.caret.style.display = "none";
+		}
 		this.timerEl.textContent = "";
 		this.totalEl.textContent = "";
 		this.updateTrackInfos();
 		this.updatePICT();
 		this.updateColors();
-	}
-
-	removeCaret() {
-		if (window.getComputedStyle(this.caret).display === "block") {
-			this.caret.style.display = "none";
-			this.caret.style.left = 0;
-		}
 	}
 
 	timerStart() {
@@ -194,29 +188,14 @@ export default class Track {
 	ticTac() {
 		if (this.currPosition < this.durationMs) {
 			this.currPosition = Date.now() - this.timeStart;
-			// console.log((100*this.currPosition)/this.durationMs);
 			const millis = this.currPosition % 1000; // # de millisecondes
 			if (millis - this.previousMillis < 0) {
 				// passage à une nouvelle seconde -> mise à jour de l'affichage du temps écoulé
 				this.timerEl.textContent = this.displayDuration(this.currPosition);
 			}
 			this.previousMillis = millis;
-			const divWidth = this.timeLine.getBoundingClientRect().width;
-			const posX = this.scale(
-				this.currPosition,
-				0,
-				this.durationMs,
-				0,
-				divWidth,
-			);
-			const w = this.caret.w / 2;
-			if (posX - w > 0) {
-				this.caret.style.left = `${posX - w}px`;
-				this.elapsed.style.width = `${posX}px`;
-			} else {
-				this.caret.style.left = 0;
-				this.elapsed.style.width = 0;
-			}
+			const percent = (100 * this.currPosition) / this.durationMs;
+			document.documentElement.style.setProperty("--progress", `${percent}%`);
 			this.raf = window.requestAnimationFrame(this.ticTac.bind(this));
 		} else {
 			if (this.raf) window.cancelAnimationFrame(this.raf);

@@ -213,7 +213,6 @@ const trackInfos = (data) => {
 	if (isModal) closeModal();
 	if (track.isRunning) {
 		track.timerPause();
-		track.removeCaret();
 	}
 	if (track.album.id !== data.albumId) {
 		// fait disparaître la pochette précédente si l'album est différent
