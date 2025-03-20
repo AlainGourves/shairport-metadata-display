@@ -4,7 +4,7 @@ export const myConfig = {
     port: 3600
   },
   defaultArtwork: {
-    src: `assets/iTunes.png`,
+    src: 'assets/iTunes.png',
     width: 1024,
     height: 1024
   },
