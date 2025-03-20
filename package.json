@@ -17,10 +17,10 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@dotenvx/dotenvx": "^1.39.0",
     "color": "^4.2.3",
     "compression": "^1.7.4",
     "daap-parser": "^0.1.1",
-    "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "gm": "^1.25.1",
     "imagecolors": "^0.13.1",

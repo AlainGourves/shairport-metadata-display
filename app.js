@@ -6,7 +6,7 @@ const imageColors = require("imagecolors");
 const Color = require("color");
 const express = require("express");
 const WebSocket = require("ws");
-require("dotenv").config();
+require("@dotenvx/dotenvx").config();
 
 // Server
 const app = express();
@@ -14,6 +14,8 @@ const port = process.env.PORT;
 app.use(compression());
 app.use(express.static("public"));
 app.disable("x-powered-by"); // masquer express dans les headers
+const debug = process.env.NODE_ENV !== "production";
+console.log("development", debug);
 
 // biome-ignore lint/style/useNodejsImportProtocol: <explanation>
 const http = require("http");
@@ -37,8 +39,6 @@ let buf;
 let imgPath;
 let bestCr;
 let bestColor;
-
-const debug = true;
 
 const defaultImageFormat = process.env.IMG_FORMAT; // defined in `/.env`' => webp' or 'original'
 const cache = "/public/img";
@@ -127,7 +127,6 @@ pipeReader
 	.on("meta", (meta) => {
 		// if (debug) console.log("\n--------------------------\nev: meta", meta);
 		if (debug) console.log("ev: meta");
-		if (meta.caps) console.log("--->meta.caps", meta.caps);
 		if (meta.caps && meta.caps === 2) {
 			/*
             IOS Music envoie un code `caps` dans ses `meta`. `caps` est un code DACP (Digital Audio Control Protocol) pour le "playing status"
@@ -205,7 +204,8 @@ pipeReader
 		}
 	})
 	.on("pend", () => {
-		if (debug) console.log("ev: pend\n----------------------------------------------");
+		if (debug)
+			console.log("ev: pend\n----------------------------------------------");
 		// fin du stream
 		track = new Track();
 		currentAlbum = null;
@@ -397,7 +397,7 @@ async function generateImg(data, width, destUrl) {
 	return new Promise((resolve, reject) => {
 		try {
 			data.resize(width).write(destUrl, async (err, success) => {
-				console.log(`${width} version WEBP created`);
+				if (debug) console.log(`${width} version WEBP created`);
 				const newSize = await getImageSize(gm(destUrl));
 				resolve(newSize.height); // renvoie la hauteur de la nouvelle image
 			});
@@ -413,7 +413,7 @@ async function processPICT(buf) {
 		try {
 			const img = gm(buf);
 			const format = await getImageFormat(img);
-			console.log(">>>> ProcessPICT new album, image format:", format);
+			if (debug) console.log(">>>> ProcessPICT new album, image format:", format);
 			const { width, height } = await getImageSize(img);
 			if (debug) console.log(`image: ${width} x ${height} (${format})`);
 			track.artwork.dimensions.width = width;
@@ -425,7 +425,7 @@ async function processPICT(buf) {
 					"!!!!!!!! [ProcessPICT] currentAlbum pas encore renseigné !!!!!",
 				);
 			imgPath = `${__dirname}${cache}/${currentAlbum}.${track.artwork.format}`;
-			console.log(">>>> ProcessPICT new album, path:", imgPath);
+			if (debug) console.log(">>>> ProcessPICT new album, path:", imgPath);
 
 			// Vérifie si l'image existe en cache
 			if (fs.existsSync(imgPath)) {
@@ -482,7 +482,7 @@ async function processPICT(buf) {
 	} else {
 		// Vérifier que l'image existe
 		imgPath = `${__dirname}${cache}/${currentAlbum}.${track.artwork.format}`;
-		console.log(
+		if (debug) console.log(
 			">>>> ProcessPICT same album, path:",
 			imgPath,
 			"format:",
@@ -502,7 +502,7 @@ function tuneColor(col, bgCol) {
 	// if (debug) console.log("-------------------------");
 	// if (debug) console.log("background:", bgCol.hsl, "lumi:");
 	// if (debug)
-		// console.log("foreground:", col.hsl, "lumi:", "contrast ratio:", col.cr);
+	// console.log("foreground:", col.hsl, "lumi:", "contrast ratio:", col.cr);
 
 	// Dérivée de la courbe : on calcule la pente de la courbe du contrast ratio par rapport à la luminosité de la couleur de premier plan pour voir si elle est croissante ou décroissante et ainsi déterminer la direction
 	const c1 = Color({ h: col.hsl.h, s: col.hsl.s, l: Number(col.hsl.l) + 1 });

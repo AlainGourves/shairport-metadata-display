@@ -351,7 +351,7 @@ div#timeLine svg .st0 {
 }
 
 div#duration {
-	--s: 10px;
+	--s: 8px;
 	position: absolute;
 	width: 100%;
 	height: var(--timeline-height);
@@ -364,7 +364,7 @@ div#duration {
 	background: repeating-linear-gradient(
 			135deg,
 			#0000 0 var(--s),
-			#0005 0 calc(var(--s) * 2)
+			#0004 0 calc(var(--s) * 2)
 		)
 		top left / var(--progress) var(--timeline-height) no-repeat,
 		linear-gradient(90deg, var(--bleu) var(--progress, 0), #111 0), #111;
