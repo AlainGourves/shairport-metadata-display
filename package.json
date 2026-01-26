@@ -21,15 +21,14 @@
     "color": "^4.2.3",
     "compression": "^1.8.1",
     "daap-parser": "^0.1.1",
-    "express": "^4.22.1",
+    "express": "5",
     "gm": "^1.25.1",
     "imagecolors": "^0.13.1",
     "shairport-sync-reader": "0.0.9",
     "ws": "^8.19.0"
   },
   "overrides": {
-    "xml2js": "0.6.2",
-    "qs": "6.14.1"
+    "xml2js": "0.6.2"
   },
   "scripts": {
     "start": "node app.js",

@@ -63,7 +63,7 @@ server.listen(port, () => {
 
 // Routes ----------------------
 app.get("/", (req, res) => {
-	res.sendFile(`${__dirname}public/index.html`);
+	res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Route not found (404)
